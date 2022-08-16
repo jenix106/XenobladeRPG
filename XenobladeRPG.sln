@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XenobladeRPG", "XenobladeRPG.csproj", "{92EADA9A-AB0B-4186-BB84-96121D2E1635}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{92EADA9A-AB0B-4186-BB84-96121D2E1635}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92EADA9A-AB0B-4186-BB84-96121D2E1635}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92EADA9A-AB0B-4186-BB84-96121D2E1635}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92EADA9A-AB0B-4186-BB84-96121D2E1635}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3EE4D03C-CF04-43D9-8FF8-5B2EABD52008}
+	EndGlobalSection
+EndGlobal
