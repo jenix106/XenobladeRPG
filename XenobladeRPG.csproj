@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Xenoblade RPG\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -49,6 +52,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\Unity.ResourceManager.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
@@ -66,8 +72,29 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Blaze.cs" />
+    <Compile Include="Bleed.cs" />
+    <Compile Include="Chill.cs" />
+    <Compile Include="DangerBlack.cs" />
+    <Compile Include="DangerBlue.cs" />
+    <Compile Include="DangerRed.cs" />
+    <Compile Include="DangerYellow.cs" />
+    <Compile Include="DefenseDirection.cs" />
+    <Compile Include="Poison.cs" />
+    <Compile Include="StatusEffect.cs" />
+    <Compile Include="XenobladeDamageType.cs" />
+    <Compile Include="XenobladeLevelModule.cs" />
+    <Compile Include="XCRPGCheck.cs" />
+    <Compile Include="XenobladeBrainModule.cs" />
+    <Compile Include="XenobladeDamage.cs" />
+    <Compile Include="XenobladeItemModules.cs" />
+    <Compile Include="XenobladePatcher.cs" />
+    <Compile Include="XenobladePlayerInfo.cs" />
+    <Compile Include="XenobladeRemoveBar.cs" />
+    <Compile Include="XenobladeManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="XenobladeStats.cs" />
+    <Compile Include="XenobladeValues.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
