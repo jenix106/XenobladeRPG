@@ -3,7 +3,7 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
-    class Bleed : MonoBehaviour
+    public class Bleed : MonoBehaviour
     {
         public Creature creature;
         public CollisionInstance initialDamage;
@@ -21,7 +21,7 @@ namespace XenobladeRPG
             }
             if (XenobladeManager.recordedCollisions.ContainsKey(initialDamage))
             {
-                bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, initialDamage.damageStruct.damage * 0.2f));
+                bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage * 0.2f, 1)));
                 bleedDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(bleedDamage, XenobladeDamageType.Bleed);
             }
@@ -37,7 +37,7 @@ namespace XenobladeRPG
         {
             if (collisionInstance == initialDamage)
             {
-                bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, collisionInstance.damageStruct.damage * 0.2f));
+                bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.2f, 1)));
                 bleedDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(bleedDamage, XenobladeDamageType.Bleed);
                 time = Time.time;
@@ -48,13 +48,13 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 20 || creature.isKilled || bleedDamage.damageStruct.damage == 0) Destroy(this);
+            if (Time.time - time >= 20 || creature.isKilled) Destroy(this);
             else if (bleedDamage == null)
             {
                 time = Time.time;
                 cooldown = Time.time;
             }
-            else if (Time.time - cooldown >= 2 || bleedDamage != null)
+            else if (Time.time - cooldown >= 2 && bleedDamage != null)
             {
                 creature.Damage(bleedDamage);
                 cooldown = Time.time;

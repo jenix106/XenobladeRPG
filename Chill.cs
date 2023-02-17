@@ -8,7 +8,7 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
-    class Chill : MonoBehaviour
+    public class Chill : MonoBehaviour
     {
         public Creature creature;
         public CollisionInstance initialDamage;
@@ -26,7 +26,7 @@ namespace XenobladeRPG
             }
             if (XenobladeManager.recordedCollisions.ContainsKey(initialDamage))
             {
-                chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, initialDamage.damageStruct.damage * 0.6f));
+                chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage * 0.6f, 1)));
                 chillDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(chillDamage, XenobladeDamageType.Chill);
             }
@@ -42,7 +42,7 @@ namespace XenobladeRPG
         {
             if (collisionInstance == initialDamage)
             {
-                chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, collisionInstance.damageStruct.damage * 0.6f));
+                chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.6f, 1)));
                 chillDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(chillDamage, XenobladeDamageType.Chill);
                 time = Time.time;
@@ -53,13 +53,13 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 10 || creature.isKilled || chillDamage.damageStruct.damage == 0) Destroy(this);
+            if (Time.time - time >= 10 || creature.isKilled) Destroy(this);
             else if (chillDamage == null)
             {
                 time = Time.time;
                 cooldown = Time.time;
             }
-            else if (Time.time - cooldown >= 2 || chillDamage != null)
+            else if (Time.time - cooldown >= 2 && chillDamage != null)
             {
                 creature.Damage(chillDamage);
                 cooldown = Time.time;

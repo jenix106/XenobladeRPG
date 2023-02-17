@@ -40,7 +40,7 @@ namespace XenobladeRPG
         public bool detectionTypeSound;
         public bool forceDetection;
         public bool isSleeping;
-        protected float baseAttackSpeedMultiplier;
+        protected float baseAttackSpeedMultiplier = 1;
         public DefenseDirection defenseDirection;
         public Dictionary<RagdollPart, bool> partDismemberment = new Dictionary<RagdollPart, bool>();
         public bool isDazed = false;
@@ -64,7 +64,8 @@ namespace XenobladeRPG
         {
             creature = GetComponent<Creature>();
             creature.OnKillEvent += Creature_OnKillEvent;
-            baseAttackSpeedMultiplier = creature.brain.instance.GetModule<BrainModuleMelee>(false).animationSpeedMultiplier;
+            if (creature?.brain?.instance?.GetModule<BrainModuleMelee>(false) != null)
+                baseAttackSpeedMultiplier = creature.brain.instance.GetModule<BrainModuleMelee>(false).animationSpeedMultiplier;
             baseHealth = creature.maxHealth;
             StartCoroutine(Apply());
         }
@@ -283,10 +284,6 @@ namespace XenobladeRPG
                 if (part.sliceWidth <= 0) part.sliceAllowed = false;
             }
             RefreshLevelModifiers();
-            /*if (level >= XenobladeManager.GetLevel() + 6) creature.gameObject.AddComponent<DangerRed>();
-            else if (level >= XenobladeManager.GetLevel() + 3) creature.gameObject.AddComponent<DangerYellow>();
-            else if (level <= XenobladeManager.GetLevel() - 6) creature.gameObject.AddComponent<DangerBlack>();
-            else if (level <= XenobladeManager.GetLevel() - 3) creature.gameObject.AddComponent<DangerBlue>();*/
             isMage = false;
             isLongDistanceMage = false;
             foreach (ContainerData.Content content in creature.container.contents)
@@ -327,15 +324,12 @@ namespace XenobladeRPG
         }
         public void Reset()
         {
-            /*if (creature.gameObject.GetComponent<DangerRed>() != null) Destroy(creature.gameObject.GetComponent<DangerRed>());
-            if (creature.gameObject.GetComponent<DangerYellow>() != null) Destroy(creature.gameObject.GetComponent<DangerYellow>());
-            if (creature.gameObject.GetComponent<DangerBlack>() != null) Destroy(creature.gameObject.GetComponent<DangerBlack>());
-            if (creature.gameObject.GetComponent<DangerBlue>() != null) Destroy(creature.gameObject.GetComponent<DangerBlue>());*/
             foreach (RagdollPart part in creature.ragdoll.parts)
             {
                 part.sliceWidth = 0.04f;
                 if (partDismemberment.ContainsKey(part)) part.sliceAllowed = partDismemberment[part];
             }
+            if (creature?.brain?.instance?.GetModule<BrainModuleMelee>() != null)
             baseAttackSpeedMultiplier = creature.brain.instance.GetModule<BrainModuleMelee>(false).animationSpeedMultiplier;
         }
 
@@ -367,10 +361,6 @@ namespace XenobladeRPG
         public void RefreshLevel()
         {
             Reset();
-            /*if (level >= XenobladeManager.GetLevel() + 6) creature.gameObject.AddComponent<DangerRed>();
-            else if (level >= XenobladeManager.GetLevel() + 3) creature.gameObject.AddComponent<DangerYellow>();
-            else if (level <= XenobladeManager.GetLevel() - 6) creature.gameObject.AddComponent<DangerBlack>();
-            else if (level <= XenobladeManager.GetLevel() - 3) creature.gameObject.AddComponent<DangerBlue>();*/
             foreach (RagdollPart part in creature.ragdoll.parts)
             {
                 part.sliceWidth = Mathf.Clamp(0.04f + (0.004f * (XenobladeManager.GetLevel() - level)), 0, 0.08f);

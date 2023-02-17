@@ -83,7 +83,6 @@ namespace XenobladeRPG
         bool isPhysicalArtsPlus;
         float debuffTime;
         float buffTime;
-        float speedMultiplier = 1f;
         List<Image> currentDebuffs = new List<Image>();
         List<Image> allDebuffs = new List<Image>();
         List<Image> currentBuffs = new List<Image>();
@@ -292,26 +291,9 @@ namespace XenobladeRPG
                 }
                 components = creature.GetComponents(typeof(Component));
                 statuses = creature.GetComponents<StatusEffect>();
-                CheckAgility();
                 UpdateStatusEffects();
                 UpdateBuffs();
                 UpdateDebuffs();
-            }
-        }
-        public void CheckAgility()
-        {
-            if (creature.currentLocomotion.speedModifiers.Count == 0)
-            {
-                speedMultiplier = 1f;
-            }
-            else
-            {
-                float num = 1f;
-                foreach (Locomotion.SpeedModifier speedModifier in creature.currentLocomotion.speedModifiers)
-                {
-                    num *= speedModifier.forwardSpeedMultiplier;
-                }
-                speedMultiplier = num;
             }
         }
         public void UpdateBuffs()

@@ -3,7 +3,7 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
-    class StatusEffect : MonoBehaviour
+    public class StatusEffect : MonoBehaviour
     {
         public Creature creature;
         public float damage;
@@ -36,7 +36,7 @@ namespace XenobladeRPG
         public void Update()
         {
             if (Time.time - time >= duration || creature.isKilled || statusEffectDamage.damageStruct.damage == 0) Destroy(this);
-            else if (Time.time - cooldown >= 2 || statusEffectDamage != null)
+            else if (Time.time - cooldown >= 2 && statusEffectDamage != null)
             {
                 creature.Damage(statusEffectDamage);
                 cooldown = Time.time;

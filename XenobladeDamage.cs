@@ -41,23 +41,23 @@ namespace XenobladeRPG
             switch (type)
             {
                 case XenobladeDamageType.Blaze:
-                    damageResist.color = Color.red + Color.yellow;
+                    damageResist.color = Color.yellow;
                     transform.localScale *= 0.5f;
                     break;
                 case XenobladeDamageType.Poison:
-                    damageResist.color = Color.red + Color.yellow;
+                    damageResist.color = Color.yellow;
                     transform.localScale *= 0.5f;
                     break;
                 case XenobladeDamageType.Bleed:
-                    damageResist.color = Color.red + Color.yellow;
+                    damageResist.color = Color.yellow;
                     transform.localScale *= 0.5f;
                     break;
                 case XenobladeDamageType.Chill:
-                    damageResist.color = Color.red + Color.yellow;
+                    damageResist.color = Color.yellow;
                     transform.localScale *= 0.5f;
                     break;
                 case XenobladeDamageType.Electric:
-                    damageResist.color = Color.red + Color.blue;
+                    damageResist.color = Color.blue;
                     transform.localScale *= 0.5f;
                     break;
                 default:

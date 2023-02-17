@@ -3,7 +3,7 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
-    class Poison : MonoBehaviour
+    public class Poison : MonoBehaviour
     {
         public Creature creature;
         public CollisionInstance initialDamage;
@@ -21,7 +21,7 @@ namespace XenobladeRPG
             }
             if (XenobladeManager.recordedCollisions.ContainsKey(initialDamage))
             {
-                poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, initialDamage.damageStruct.damage));
+                poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage, 1)));
                 poisonDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(poisonDamage, XenobladeDamageType.Poison);
             }
@@ -37,7 +37,7 @@ namespace XenobladeRPG
         {
             if (collisionInstance == initialDamage)
             {
-                poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, collisionInstance.damageStruct.damage));
+                poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage, 1)));
                 poisonDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(poisonDamage, XenobladeDamageType.Poison);
                 time = Time.time;
@@ -48,13 +48,13 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 30 || creature.isKilled || poisonDamage.damageStruct.damage == 0) Destroy(this);
+            if (Time.time - time >= 30 || creature.isKilled) Destroy(this);
             else if (poisonDamage == null)
             {
                 time = Time.time;
                 cooldown = Time.time;
             }
-            else if (Time.time - cooldown >= 2 || poisonDamage != null)
+            else if (Time.time - cooldown >= 2 && poisonDamage != null)
             {
                 creature.Damage(poisonDamage);
                 cooldown = Time.time;

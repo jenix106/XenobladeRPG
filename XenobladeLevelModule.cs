@@ -32,33 +32,53 @@ namespace XenobladeRPG
             XenobladePatcher.DoPatching();
             foreach(ItemData data in Catalog.GetDataList<ItemData>())
             {
-                if (data.type == ItemData.Type.Wardrobe && data.GetModule<XenobladeArmorModule>() == null)
+                try
                 {
-                    XenobladeArmorModule armor = new XenobladeArmorModule
+                    if (data.type == ItemData.Type.Wardrobe && data.GetModule<XenobladeArmorModule>() == null)
                     {
-                        physicalDefense = 50 * data.tier,
-                        etherDefense = 50 * data.tier,
-                        weight = 1 * data.tier,
-                        itemData = data
-                    };
-                    data.modules.Add(armor);
-                }
-                if ((data.type == ItemData.Type.Weapon || data.type == ItemData.Type.Shield) && data.GetModule<XenobladeWeaponModule>() == null)
-                {
-                    XenobladeWeaponModule weapon = new XenobladeWeaponModule
+                        XenobladeArmorModule armor = new XenobladeArmorModule
+                        {
+                            physicalDefense = 50 * data.tier,
+                            etherDefense = 50 * data.tier,
+                            weight = 1 * data.tier,
+                            itemData = data
+                        };
+                        data.modules.Add(armor);
+                    }
+                    if ((data.type == ItemData.Type.Weapon || data.type == ItemData.Type.Shield) && data.GetModule<XenobladeWeaponModule>() == null)
                     {
-                        baseAttackDamage = new Vector2(Mathf.Clamp(8 * XenobladeManager.GetLevel(), 0, 999), Mathf.Clamp(11 * XenobladeManager.GetLevel(), 0, 999)),
-                        itemData = data
-                    };
-                    data.modules.Add(weapon);
+                        XenobladeWeaponModule weapon = new XenobladeWeaponModule
+                        {
+                            baseAttackDamage = new Vector2(Mathf.Clamp(8 * XenobladeManager.GetLevel(), 0, 999), Mathf.Clamp(11 * XenobladeManager.GetLevel(), 0, 999)),
+                            itemData = data
+                        };
+                        data.modules.Add(weapon);
+                    }
                 }
+                catch { }
             }
             foreach(DamagerData data in Catalog.GetDataList<DamagerData>())
             {
-                data.playerMinDamage = 0f;
-                data.playerMaxDamage = float.PositiveInfinity;
+                try
+                {
+                    data.playerMinDamage = 0f;
+                    data.playerMaxDamage = float.PositiveInfinity;
+                }
+                catch { }
             }
-            if (level.GetComponent<QuitComponent>() != null)
+            foreach(BrainData data in Catalog.GetDataList<BrainData>())
+            {
+                try
+                {
+                    if(data.GetModule<XenobladeBrainModule>(false) == null)
+                    {
+                        XenobladeBrainModule brain = new XenobladeBrainModule();
+                        data.modules.Add(brain);
+                    }
+                }
+                catch { }
+            }
+            if (level?.GetComponent<QuitComponent>() != null)
                 level.gameObject.AddComponent<QuitComponent>();
             return base.OnLoadCoroutine();
         }
@@ -146,12 +166,12 @@ namespace XenobladeRPG
         {
             if (creature != Player.local.creature)
             {
-                if (creature.brain.instance.GetModule<XenobladeBrainModule>(false) == null)
+                /*if (creature.brain.instance.GetModule<XenobladeBrainModule>(false) == null)
                 {
                     XenobladeBrainModule obj = new XenobladeBrainModule();
                     creature.brain.instance.modules.Add(obj);
                     obj.Load(creature);
-                }
+                }*/
                 creature.gameObject.AddComponent<XenobladeRemoveBar>().healthBar = Object.Instantiate(currentBar);
             }
             if (creature == Player.local.creature)

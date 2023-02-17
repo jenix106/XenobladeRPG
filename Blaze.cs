@@ -3,7 +3,7 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
-    class Blaze : MonoBehaviour
+    public class Blaze : MonoBehaviour
     {
         public Creature creature;
         public CollisionInstance initialDamage;
@@ -21,7 +21,7 @@ namespace XenobladeRPG
             }
             if (XenobladeManager.recordedCollisions.ContainsKey(initialDamage))
             {
-                blazeDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, initialDamage.damageStruct.damage * 0.4f));
+                blazeDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage * 0.4f, 1)));
                 blazeDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(blazeDamage, XenobladeDamageType.Blaze);
             }
@@ -37,7 +37,7 @@ namespace XenobladeRPG
         {
             if (collisionInstance == initialDamage)
             {
-                blazeDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, collisionInstance.damageStruct.damage * 0.4f));
+                blazeDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.4f, 1)));
                 blazeDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
                 XenobladeManager.BypassXenobladeDamage(blazeDamage, XenobladeDamageType.Blaze);
                 time = Time.time;
@@ -48,13 +48,13 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 20 || creature.isKilled || blazeDamage.damageStruct.damage == 0) Destroy(this);
+            if (Time.time - time >= 20 || creature.isKilled) Destroy(this);
             else if (blazeDamage == null)
             {
                 time = Time.time;
                 cooldown = Time.time;
             }
-            else if (Time.time - cooldown >= 2 || blazeDamage != null)
+            else if (Time.time - cooldown >= 2 && blazeDamage != null)
             {
                 creature.Damage(blazeDamage);
                 cooldown = Time.time;
