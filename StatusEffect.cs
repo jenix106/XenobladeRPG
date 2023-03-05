@@ -11,13 +11,14 @@ namespace XenobladeRPG
         public float duration;
         public XenobladeDamageType damageType = XenobladeDamageType.Unknown;
         CollisionInstance statusEffectDamage;
-        float time = 0;
+        public float time = 0;
         float cooldown = 0;
         StatusEffect other;
         public void Start()
         {
             if (creature == null)
-                creature = GetComponent<Creature>(); 
+                creature = GetComponent<Creature>();
+            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
             statusEffectDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, damage * damageMultiplier));
             statusEffectDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
             XenobladeManager.BypassXenobladeDamage(statusEffectDamage, damageType);
@@ -41,6 +42,10 @@ namespace XenobladeRPG
                 creature.Damage(statusEffectDamage);
                 cooldown = Time.time;
             }
+        }
+        public void OnDestroy()
+        {
+            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
         }
     }
 }

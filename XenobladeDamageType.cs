@@ -9,6 +9,8 @@
         Chill,
         Bleed,
         Poison,
-        Electric
+        Electric,
+        Spike,
+        InstantDeath
     }
 }

@@ -23,12 +23,22 @@ namespace XenobladeRPG
         public int overrideStrength = -1;
         public int overrideEther = -1;
         public int overrideAgility = -1;
+        public SpikeType spikeType = SpikeType.None;
+        public SpikeEffect spikeEffect = SpikeEffect.None;
+        public float spikeDamage = 0;
+        public float spikeDebuffPercent = 0;
+        public float spikeDistance = 0;
         public override void Load(Creature creature)
         {
             base.Load(creature);
             if (creature.gameObject.GetComponent<XenobladeStats>() != null) GameObject.Destroy(creature.gameObject.GetComponent<XenobladeStats>());
             creature.gameObject.AddComponent<XenobladeStats>().Setup(minLevel, maxLevel, minLevelVariation, maxLevelVariation, playerRelative, isUnique,
                 creatureName, detectionTypeSight, detectionTypeSound, forceDetection, criticalRate, defenseDirection, physicalDefense, etherDefense, overrideHealth, overrideStrength, overrideEther, overrideAgility);
+            GameObject.Destroy(creature.GetComponent<Spike>());
+            if(spikeType != SpikeType.None)
+            {
+                creature.gameObject.AddComponent<Spike>().Setup(spikeType, spikeEffect, spikeDamage, spikeDebuffPercent, spikeDistance);
+            }
         }
     }
 }

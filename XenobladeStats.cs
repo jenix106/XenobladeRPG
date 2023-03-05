@@ -40,6 +40,7 @@ namespace XenobladeRPG
         public bool detectionTypeSound;
         public bool forceDetection;
         public bool isSleeping;
+        public bool isAuraSealed = false;
         protected float baseAttackSpeedMultiplier = 1;
         public DefenseDirection defenseDirection;
         public Dictionary<RagdollPart, bool> partDismemberment = new Dictionary<RagdollPart, bool>();

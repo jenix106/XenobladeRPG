@@ -13,12 +13,13 @@ namespace XenobladeRPG
         public Creature creature;
         public CollisionInstance initialDamage;
         CollisionInstance chillDamage;
-        float time = 0;
+        public float time = 0;
         float cooldown = 0;
         public void Start()
         {
             if (creature == null)
                 creature = GetComponent<Creature>();
+            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
             if (initialDamage == null)
             {
                 Debug.LogError("Chill components require an initial collision instance, as it deals 60% of the original damage per tick. Please add a collision instance to the 'initialDamage' variable in the Chill component and Damage() the creature with that instance.");
@@ -64,6 +65,10 @@ namespace XenobladeRPG
                 creature.Damage(chillDamage);
                 cooldown = Time.time;
             }
+        }
+        public void OnDestroy()
+        {
+            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
         }
     }
 }

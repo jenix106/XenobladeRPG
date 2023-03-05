@@ -1,6 +1,7 @@
 ﻿using ThunderRoad;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace XenobladeRPG
 {
@@ -8,17 +9,17 @@ namespace XenobladeRPG
     {
         WristStats stats;
         public GameObject info;
-        Text level;
+        TMP_Text level;
         Image exp;
-        Text points;
-        Text pointsBlack;
+        TMP_Text points;
+        TMP_Text pointsBlack;
         public void Start()
         {
             stats = GetComponent<WristStats>();
             exp = info.transform.Find("Exp").GetComponent<Image>();
-            level = info.transform.Find("Level").GetComponent<Text>();
-            points = info.transform.Find("Points").GetComponent<Text>();
-            pointsBlack = info.transform.Find("PointsBlack").GetComponent<Text>();
+            level = info.transform.Find("Level").GetComponent<TMP_Text>();
+            points = info.transform.Find("Points").GetComponent<TMP_Text>();
+            pointsBlack = info.transform.Find("PointsBlack").GetComponent<TMP_Text>();
         }
         public void Update()
         {

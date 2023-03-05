@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace XenobladeRPG
 {
-    public class XenobladeRemoveBar : MonoBehaviour
+    public class XenobladeCreatureInfo : MonoBehaviour
     {
         Creature creature;
         public GameObject healthBar;
@@ -63,7 +63,6 @@ namespace XenobladeRPG
         XenobladeStats stats;
         bool isParalyzed;
         bool isArtsSealed;
-        bool isAuraSealed;
         bool isBinded;
         bool isPoisoned;
         bool isBurning;
@@ -388,7 +387,6 @@ namespace XenobladeRPG
             isPoisoned = components.Any(component => component.ToString().ToLower().Contains("poision") || component.ToString().ToLower().Contains("venom")) || (!statuses.IsNullOrEmpty() && statuses.Any(status => status.damageType == XenobladeDamageType.Poison));
             isBurning = components.Any(component => component.ToString().ToLower().Contains("burn") || component.ToString().ToLower().Contains("fire") || component.ToString().ToLower().Contains("blaze")) || (!statuses.IsNullOrEmpty() && statuses.Any(status => status.damageType == XenobladeDamageType.Blaze));
             isBleeding = components.Any(component => component.ToString().ToLower().Contains("bleed") || component.ToString().ToLower().Contains("eateraura")) || (!statuses.IsNullOrEmpty() && statuses.Any(status => status.damageType == XenobladeDamageType.Bleed));
-            isAuraSealed = components.Any(component => component.ToString().ToLower().Contains("purgeaura"));
             isFreezing = components.Any(component => component.ToString().ToLower().Contains("freeze") || component.ToString().ToLower().Contains("frost") || component.ToString().ToLower().Contains("chill") || component.ToString().ToLower().Contains("frozen")) || (!statuses.IsNullOrEmpty() && statuses.Any(status => status.damageType == XenobladeDamageType.Chill));
             isLockedOn = components.Any(component => component.ToString().ToLower().Contains("lockon")); 
             isConfused = components.Any(component => component.ToString().ToLower().Contains("confuse") || component.ToString().ToLower().Contains("confusion"));
@@ -399,7 +397,7 @@ namespace XenobladeRPG
             if (isPoisoned && !currentDebuffs.Contains(poison)) currentDebuffs.Add(poison); else if (!isPoisoned) currentDebuffs.Remove(poison);
             if (isBurning && !currentDebuffs.Contains(burn)) currentDebuffs.Add(burn); else if (!isBurning) currentDebuffs.Remove(burn);
             if (isBleeding && !currentDebuffs.Contains(bleed)) currentDebuffs.Add(bleed); else if (!isBleeding) currentDebuffs.Remove(bleed);
-            if (isAuraSealed && !currentDebuffs.Contains(auraSeal)) currentDebuffs.Add(auraSeal); else if (!isAuraSealed) currentDebuffs.Remove(auraSeal);
+            if (stats.isAuraSealed && !currentDebuffs.Contains(auraSeal)) currentDebuffs.Add(auraSeal); else if (!stats.isAuraSealed) currentDebuffs.Remove(auraSeal);
             if (isFreezing && !currentDebuffs.Contains(freeze)) currentDebuffs.Add(freeze); else if (!isFreezing) currentDebuffs.Remove(freeze);
             if (isLockedOn && !currentDebuffs.Contains(lockOn)) currentDebuffs.Add(lockOn); else if (!isLockedOn) currentDebuffs.Remove(lockOn);
             if (isConfused && !currentDebuffs.Contains(confuse)) currentDebuffs.Add(confuse); else if (!isConfused) currentDebuffs.Remove(confuse);

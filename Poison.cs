@@ -8,12 +8,13 @@ namespace XenobladeRPG
         public Creature creature;
         public CollisionInstance initialDamage;
         CollisionInstance poisonDamage;
-        float time = 0;
+        public float time = 0;
         float cooldown = 0;
         public void Start()
         {
             if (creature == null)
                 creature = GetComponent<Creature>();
+            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
             if (initialDamage == null)
             {
                 Debug.LogError("Poison components require an initial collision instance, as it deals 100% of the original damage per tick. Please add a collision instance to the 'initialDamage' variable in the Poison component and Damage() the creature with that instance.");
@@ -59,6 +60,10 @@ namespace XenobladeRPG
                 creature.Damage(poisonDamage);
                 cooldown = Time.time;
             }
+        }
+        public void OnDestroy()
+        {
+            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
         }
     }
 }

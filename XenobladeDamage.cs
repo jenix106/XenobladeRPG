@@ -9,8 +9,8 @@ namespace XenobladeRPG
     {
         public CollisionInstance instance;
         public Creature creature;
-        public Image critical;
-        public TextMeshProUGUI damageResist;
+        public TMP_Text critical;
+        public TMP_Text damageResist;
         public bool isResisted = false;
         public bool isCritical = false;
         public bool isBlocked = false;
@@ -19,9 +19,9 @@ namespace XenobladeRPG
         public XenobladeDamageType type;
         public void Start()
         {
-            critical = transform.Find("Critical").GetComponent<Image>();
+            critical = transform.Find("Critical").GetComponent<TMP_Text>();
             critical.gameObject.SetActive(isCritical && !isMissed);
-            damageResist = transform.Find("DamageResist").GetComponent<TextMeshProUGUI>();
+            damageResist = transform.Find("DamageResist").GetComponent<TMP_Text>();
             if (isResisted || isMissed) isDefended = false;
             if (instance.contactPoint != Vector3.zero)
                 transform.position = instance.contactPoint;

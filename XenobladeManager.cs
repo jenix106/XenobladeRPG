@@ -39,6 +39,7 @@ namespace XenobladeRPG
         protected static float agilityModifier = 0;
         protected static float criticalRateModifier = 0;
         protected static float blockRateModifier = 0;
+        public static bool isAuraSealed = false;
         public static Dictionary<CollisionInstance, XenobladeDamageType> bypassedCollisions = new Dictionary<CollisionInstance, XenobladeDamageType>();
         public static Dictionary<CollisionInstance, XenobladeDamageType> recordedCollisions = new Dictionary<CollisionInstance, XenobladeDamageType>();
         public static int GetLevel() => PlayerLevel;
@@ -277,9 +278,9 @@ namespace XenobladeRPG
         }
         public static void LoadFromSave()
         {
-            if (File.Exists(Path.Combine(Application.streamingAssetsPath, "Mods/Xenoblade RPG/Saves/XenobladeValues.json")))
+            if (File.Exists(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save"))
             {
-                XenobladeValues xenobladeValues = JsonConvert.DeserializeObject<XenobladeValues>(File.ReadAllText((Path.Combine(Application.streamingAssetsPath, "Mods/Xenoblade RPG/Saves/XenobladeValues.json"))));
+                XenobladeValues xenobladeValues = JsonConvert.DeserializeObject<XenobladeValues>(File.ReadAllText(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save"));
                 PlayerLevel = Mathf.Clamp(xenobladeValues.PlayerLevel, 1, 99);
                 PlayerXP = Mathf.Max(xenobladeValues.PlayerXP, 0);
                 BaseStrength = Mathf.Max(xenobladeValues.Strength, 0);
@@ -289,9 +290,20 @@ namespace XenobladeRPG
                 EtherHits = Mathf.Max(xenobladeValues.EtherHits, 1);
                 BaseCriticalRate = Mathf.Clamp(xenobladeValues.CriticalRate, 0, 1);
                 BaseBlockRate = Mathf.Clamp(xenobladeValues.BlockRate, 0, 1);
+                Debug.Log("Loaded Xenoblade RPG save: " + Player.characterData.ID);
             }
             else
             {
+                Debug.Log("Xenoblade RPG save not found for this character. Generating new save: " + Player.characterData.ID);
+                PlayerLevel = 1;
+                PlayerXP = 0;
+                BaseStrength = 0;
+                BaseEther = 0;
+                BaseAgility = 0;
+                StrengthHits = 1;
+                EtherHits = 1;
+                BaseCriticalRate = 0;
+                BaseBlockRate = 0;
                 SaveToJSON();
             }
             float xpNeeded = 40;
@@ -318,7 +330,7 @@ namespace XenobladeRPG
                 BlockRate = BaseBlockRate
             };
             string contents = JsonConvert.SerializeObject(xenobladeValues, Formatting.Indented);
-            File.WriteAllText(Path.Combine(Application.streamingAssetsPath, "Mods/Xenoblade RPG/Saves/XenobladeValues.json"), contents);
+            File.WriteAllText(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save", contents);
         }
     }
 }
