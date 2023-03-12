@@ -10,11 +10,12 @@ namespace XenobladeRPG
         CollisionInstance poisonDamage;
         public float time = 0;
         float cooldown = 0;
+        public float duration = 30;
         public void Start()
         {
             if (creature == null)
                 creature = GetComponent<Creature>();
-            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
             if (initialDamage == null)
             {
                 Debug.LogError("Poison components require an initial collision instance, as it deals 100% of the original damage per tick. Please add a collision instance to the 'initialDamage' variable in the Poison component and Damage() the creature with that instance.");
@@ -24,7 +25,6 @@ namespace XenobladeRPG
             {
                 poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage, 1)));
                 poisonDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(poisonDamage, XenobladeDamageType.Poison);
             }
             else
             {
@@ -40,7 +40,6 @@ namespace XenobladeRPG
             {
                 poisonDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage, 1)));
                 poisonDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(poisonDamage, XenobladeDamageType.Poison);
                 time = Time.time;
                 cooldown = Time.time;
                 creature.OnDamageEvent -= Creature_OnDamageEvent;
@@ -49,7 +48,7 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 30 || creature.isKilled) Destroy(this);
+            if (Time.time - time >= duration || creature.isKilled) Destroy(this);
             else if (poisonDamage == null)
             {
                 time = Time.time;
@@ -57,13 +56,13 @@ namespace XenobladeRPG
             }
             else if (Time.time - cooldown >= 2 && poisonDamage != null)
             {
-                creature.Damage(poisonDamage);
+                XenobladeManager.Damage(null, creature, poisonDamage, XenobladeDamageType.Poison);
                 cooldown = Time.time;
             }
         }
         public void OnDestroy()
         {
-            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffRemoved(this, creature, this);
         }
     }
 }

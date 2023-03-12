@@ -1,6 +1,7 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using ThunderRoad;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace XenobladeRPG
 {
@@ -13,55 +14,63 @@ namespace XenobladeRPG
         public float damage = 0;
         public float debuffPercent = 0;
         public float distance = 0;
-        CollisionInstance collisionInstance;
+        public float duration = 0;
+        CollisionInstance collision;
         XenobladeStats attackerStats;
         XenobladeStats creatureStats;
         float time;
-        XenobladeManager.PlayerStatModifier playerStatModifier;
-        XenobladeStats.StatModifier creatureStatModifier;
+        Dictionary<Creature, float> debuffTimes = new Dictionary<Creature, float>();
+        List<Creature> remove = new List<Creature>();
         public void Start()
         {
             creature = GetComponent<Creature>();
             creatureStats = creature.GetComponent<XenobladeStats>();
             creature.OnKillEvent += Creature_OnKillEvent;
             XenobladeEvents.onXenobladeDamage += XenobladeEvents_onXenobladeDamage;
-            collisionInstance = new CollisionInstance(new DamageStruct(DamageType.Unknown, damage));
-            XenobladeManager.BypassXenobladeDamage(collisionInstance, XenobladeDamageType.Spike);
+            collision = new CollisionInstance(new DamageStruct(DamageType.Unknown, damage));
             time = Time.time;
         }
 
         private void XenobladeEvents_onXenobladeDamage(ref CollisionInstance collisionInstance, ref Creature attacker, ref Creature defender, ref XenobladeDamageType damageType, EventTime eventTime)
         {
-            if(defender == creature && !attacker.isKilled && attacker != creature && eventTime == EventTime.OnEnd && damageType != XenobladeDamageType.Spike && (creatureStats != null ? !creatureStats.isAuraSealed : !XenobladeManager.isAuraSealed))
+            if(defender == creature && !attacker.isKilled && attacker != creature && eventTime == EventTime.OnEnd && (damageType == XenobladeDamageType.Physical || damageType == XenobladeDamageType.Ether) && (creatureStats != null ? !creatureStats.isAuraSealed : !XenobladeManager.isAuraSealed))
             {
                 attackerStats = attacker.GetComponent<XenobladeStats>();
-                collisionInstance.damageStruct.hitRagdollPart = attacker.ragdoll.rootPart;
+                collision.damageStruct.hitRagdollPart = attacker.ragdoll.rootPart;
                 if (Vector3.Distance(creature.transform.position, attacker.transform.position) <= distance && attacker.faction != creature.faction && collisionInstance.sourceColliderGroup != collisionInstance.targetColliderGroup)
                 {
-                    if (collisionInstance.damageStruct.damage > 0 && ((type == SpikeType.Counter && creature.state == Creature.State.Alive) || (type == SpikeType.Topple && creature.state == Creature.State.Destabilized))) attacker.Damage(collisionInstance);
+                    debuffTimes.Remove(attacker);
+                    debuffTimes.Add(attacker, Time.time);
+                    if (collisionInstance.damageStruct.damage > 0 && ((type == SpikeType.Counter && creature.state == Creature.State.Alive) || (type == SpikeType.Topple && creature.state == Creature.State.Destabilized)))
+                        XenobladeManager.Damage(creature, attacker, collision, XenobladeDamageType.Spike);
                     if (effect != SpikeEffect.None)
                     {
                         switch (effect)
                         {
                             case SpikeEffect.StrengthDown:
-                                if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1 - debuffPercent);
-                                else attackerStats.SetStatModifier(this, 1, 1 - debuffPercent);
+                                if (attackerStats == null) XenobladeManager.SetStrengthModifier(this, 1 - debuffPercent);
+                                else attackerStats.SetStrengthModifier(this, 1 - debuffPercent);
+                                XenobladeEvents.InvokeOnDebuffAdded(this, attacker);
                                 break;
                             case SpikeEffect.EtherDown:
-                                if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1 - debuffPercent);
-                                else attackerStats.SetStatModifier(this, 1, 1, 1 - debuffPercent);
+                                if (attackerStats == null) XenobladeManager.SetEtherModifier(this, 1 - debuffPercent);
+                                else attackerStats.SetEtherModifier(this, 1 - debuffPercent);
+                                XenobladeEvents.InvokeOnDebuffAdded(this, attacker);
                                 break;
                             case SpikeEffect.PhysicalDefenseDown:
-                                if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1 - debuffPercent);
-                                else attackerStats.SetStatModifier(this, 1, 1, 1, 1, -debuffPercent);
+                                if (attackerStats == null) XenobladeManager.SetPhysicalDefenseModifier(this, 1 - debuffPercent);
+                                else attackerStats.SetPhysicalDefenseModifier(this, -debuffPercent);
+                                XenobladeEvents.InvokeOnDebuffAdded(this, attacker);
                                 break;
                             case SpikeEffect.EtherDefenseDown:
-                                if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1, 1 - debuffPercent);
-                                else attackerStats.SetStatModifier(this, 1, 1, 1, 1, 1, -debuffPercent);
+                                if (attackerStats == null) XenobladeManager.SetEtherDefenseModifier(this, 1 - debuffPercent);
+                                else attackerStats.SetEtherDefenseModifier(this, -debuffPercent);
+                                XenobladeEvents.InvokeOnDebuffAdded(this, attacker);
                                 break;
                             case SpikeEffect.AgilityDown:
-                                if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1, 1, 1 - debuffPercent);
-                                else attackerStats.SetStatModifier(this, 1, 1, 1, 1 - debuffPercent);
+                                if (attackerStats == null) XenobladeManager.SetAgilityModifier(this, 1 - debuffPercent);
+                                else attackerStats.SetAgilityModifier(this, 1 - debuffPercent);
+                                XenobladeEvents.InvokeOnDebuffAdded(this, attacker);
                                 break;
                             case SpikeEffect.Sleep:
                                 if (attackerStats != null)
@@ -72,7 +81,7 @@ namespace XenobladeRPG
                                 break;
                             case SpikeEffect.Bind:
                                 Destroy(attacker.GetComponent<Bind>());
-                                attacker.gameObject.AddComponent<Bind>();
+                                attacker.gameObject.AddComponent<Sleep>();
                                 break;
                             case SpikeEffect.Topple:
                                 if (attackerStats != null)
@@ -104,15 +113,8 @@ namespace XenobladeRPG
                             case SpikeEffect.InstantDeath:
                                 CollisionInstance instantDeath = new CollisionInstance(new DamageStruct(DamageType.Unknown, attacker.maxHealth));
                                 instantDeath.damageStruct.hitRagdollPart = attacker.ragdoll.rootPart;
-                                XenobladeManager.BypassXenobladeDamage(instantDeath, XenobladeDamageType.InstantDeath);
-                                attacker.Damage(instantDeath);
+                                XenobladeManager.Damage(creature, attacker, instantDeath, XenobladeDamageType.InstantDeath);
                                 break;
-                        }
-                        if (XenobladeManager.statModifiers.Any(match => match.handler == this) || attackerStats.statModifiers.Any(match => match.handler == this))
-                        {
-                            playerStatModifier = XenobladeManager.statModifiers.Find(match => match.handler == this);
-                            creatureStatModifier = attackerStats.statModifiers.Find(match => match.handler == this);
-                            XenobladeEvents.InvokeOnDebuffAdded(ref attacker, null, playerStatModifier, creatureStatModifier);
                         }
                     }
                 }
@@ -125,16 +127,45 @@ namespace XenobladeRPG
             Destroy(this);
         }
 
-        public void Setup(SpikeType spikeType, SpikeEffect spikeEffect, float spikeDamage, float spikeDebuffPercent, float spikeDistance)
+        public void Setup(SpikeType spikeType, SpikeEffect spikeEffect, float spikeDamage, float spikeDebuffPercent, float spikeDistance, float spikeDuration)
         {
             type = spikeType;
             effect = spikeEffect;
             damage = spikeDamage;
             debuffPercent = spikeDebuffPercent;
             distance = spikeDistance;
+            duration = spikeDuration;
         }
         public void FixedUpdate()
         {
+            foreach(Creature creature in debuffTimes.Keys)
+            {
+                if(Time.time - duration >= debuffTimes[creature])
+                {
+                    if(creature.player != null)
+                    {
+                        XenobladeManager.RemoveStrengthModifier(this);
+                        XenobladeManager.RemoveEtherModifier(this);
+                        XenobladeManager.RemovePhysicalDefenseModifier(this);
+                        XenobladeManager.RemoveEtherDefenseModifier(this);
+                        XenobladeManager.RemoveAgilityModifier(this);
+                    }
+                    else if (creature.GetComponent<XenobladeStats>() is XenobladeStats xenobladeStats)
+                    {
+                        xenobladeStats.RemoveStrengthModifier(this);
+                        xenobladeStats.RemoveEtherModifier(this);
+                        xenobladeStats.RemovePhysicalDefenseModifier(this);
+                        xenobladeStats.RemoveEtherDefenseModifier(this);
+                        xenobladeStats.RemoveAgilityModifier(this);
+                    }
+                    remove.Add(creature);
+                }
+            }
+            foreach(Creature creature in remove)
+            {
+                debuffTimes.Remove(creature);
+            }
+            remove.Clear();
             if (Time.time - 5 >= time && type == SpikeType.CloseRange && (creatureStats != null ? !creatureStats.isAuraSealed : !XenobladeManager.isAuraSealed))
             {
                 time = Time.time;
@@ -142,35 +173,42 @@ namespace XenobladeRPG
                 {
                     if (!enemy.isKilled && enemy != creature && enemy.faction != creature.faction && Vector3.Distance(creature.transform.position, enemy.transform.position) <= distance)
                     {
+                        debuffTimes.Remove(enemy);
+                        debuffTimes.Add(enemy, Time.time);
                         attackerStats = enemy.GetComponent<XenobladeStats>();
                         if (damage > 0)
                         {
-                            collisionInstance.damageStruct.hitRagdollPart = enemy.ragdoll.rootPart;
-                            creature.Damage(collisionInstance);
+                            collision.damageStruct.hitRagdollPart = enemy.ragdoll.rootPart;
+                            XenobladeManager.Damage(creature, enemy, collision, XenobladeDamageType.Spike);
                         }
                         if (effect != SpikeEffect.None)
                         {
                             switch (effect)
                             {
                                 case SpikeEffect.StrengthDown:
-                                    if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1 - debuffPercent);
-                                    else attackerStats.SetStatModifier(this, 1, 1 - debuffPercent);
+                                    if (attackerStats == null) XenobladeManager.SetStrengthModifier(this, 1 - debuffPercent);
+                                    else attackerStats.SetStrengthModifier(this, 1 - debuffPercent);
+                                    XenobladeEvents.InvokeOnDebuffAdded(this, enemy);
                                     break;
                                 case SpikeEffect.EtherDown:
-                                    if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1 - debuffPercent);
-                                    else attackerStats.SetStatModifier(this, 1, 1, 1 - debuffPercent);
+                                    if (attackerStats == null) XenobladeManager.SetEtherModifier(this, 1 - debuffPercent);
+                                    else attackerStats.SetEtherModifier(this, 1 - debuffPercent);
+                                    XenobladeEvents.InvokeOnDebuffAdded(this, enemy);
                                     break;
                                 case SpikeEffect.PhysicalDefenseDown:
-                                    if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1 - debuffPercent);
-                                    else attackerStats.SetStatModifier(this, 1, 1, 1, 1, -debuffPercent);
+                                    if (attackerStats == null) XenobladeManager.SetPhysicalDefenseModifier(this, 1 - debuffPercent);
+                                    else attackerStats.SetPhysicalDefenseModifier(this, -debuffPercent);
+                                    XenobladeEvents.InvokeOnDebuffAdded(this, enemy);
                                     break;
                                 case SpikeEffect.EtherDefenseDown:
-                                    if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1, 1 - debuffPercent);
-                                    else attackerStats.SetStatModifier(this, 1, 1, 1, 1, 1, -debuffPercent);
+                                    if (attackerStats == null) XenobladeManager.SetEtherDefenseModifier(this, 1 - debuffPercent);
+                                    else attackerStats.SetEtherDefenseModifier(this, -debuffPercent);
+                                    XenobladeEvents.InvokeOnDebuffAdded(this, enemy);
                                     break;
                                 case SpikeEffect.AgilityDown:
-                                    if (attackerStats == null) XenobladeManager.SetStatModifier(this, 1, 1, 1, 1, 1 - debuffPercent);
-                                    else attackerStats.SetStatModifier(this, 1, 1, 1, 1 - debuffPercent);
+                                    if (attackerStats == null) XenobladeManager.SetAgilityModifier(this, 1 - debuffPercent);
+                                    else attackerStats.SetAgilityModifier(this, 1 - debuffPercent);
+                                    XenobladeEvents.InvokeOnDebuffAdded(this, enemy);
                                     break;
                                 case SpikeEffect.Sleep:
                                     if (attackerStats != null)
@@ -181,7 +219,7 @@ namespace XenobladeRPG
                                     break;
                                 case SpikeEffect.Bind:
                                     Destroy(enemy.GetComponent<Bind>());
-                                    enemy.gameObject.AddComponent<Bind>();
+                                    enemy.gameObject.AddComponent<Bind>().duration = duration;
                                     break;
                                 case SpikeEffect.Topple:
                                     if (attackerStats != null)
@@ -200,7 +238,7 @@ namespace XenobladeRPG
                                     if (attackerStats != null && enemy.brain.instance.GetModule<BrainModuleMelee>(false) is BrainModuleMelee melee)
                                     {
                                         Destroy(enemy.GetComponent<Slow>());
-                                        enemy.gameObject.AddComponent<Slow>();
+                                        enemy.gameObject.AddComponent<Slow>().duration = duration;
                                         enemy.GetComponent<Slow>().debuffPercent = debuffPercent;
                                     }
                                     break;
@@ -213,16 +251,8 @@ namespace XenobladeRPG
                                 case SpikeEffect.InstantDeath:
                                     CollisionInstance instantDeath = new CollisionInstance(new DamageStruct(DamageType.Unknown, enemy.maxHealth));
                                     instantDeath.damageStruct.hitRagdollPart = enemy.ragdoll.rootPart;
-                                    XenobladeManager.BypassXenobladeDamage(instantDeath, XenobladeDamageType.InstantDeath);
-                                    enemy.Damage(instantDeath);
+                                    XenobladeManager.Damage(creature, enemy, instantDeath, XenobladeDamageType.InstantDeath);
                                     break;
-                            }
-                            if (XenobladeManager.statModifiers.Any(match => match.handler == this) || attackerStats.statModifiers.Any(match => match.handler == this))
-                            {
-                                playerStatModifier = XenobladeManager.statModifiers.Find(match => match.handler == this);
-                                creatureStatModifier = attackerStats.statModifiers.Find(match => match.handler == this);
-                                Creature creature = enemy;
-                                XenobladeEvents.InvokeOnDebuffAdded(ref creature, null, playerStatModifier, creatureStatModifier);
                             }
                         }
                     }

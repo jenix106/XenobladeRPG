@@ -10,11 +10,12 @@ namespace XenobladeRPG
         CollisionInstance bleedDamage;
         public float time = 0;
         float cooldown = 0;
+        public float duration = 20;
         public void Start()
         {
             if (creature == null)
                 creature = GetComponent<Creature>();
-            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
             if (initialDamage == null)
             {
                 Debug.LogError("Bleed components require an initial collision instance, as it deals 20% of the original damage per tick. Please add a collision instance to the 'initialDamage' variable in the Bleed component and Damage() the creature with that instance.");
@@ -24,7 +25,6 @@ namespace XenobladeRPG
             {
                 bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage * 0.2f, 1)));
                 bleedDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(bleedDamage, XenobladeDamageType.Bleed);
             }
             else
             {
@@ -40,7 +40,6 @@ namespace XenobladeRPG
             {
                 bleedDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.2f, 1)));
                 bleedDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(bleedDamage, XenobladeDamageType.Bleed);
                 time = Time.time;
                 cooldown = Time.time;
                 creature.OnDamageEvent -= Creature_OnDamageEvent;
@@ -49,7 +48,7 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 20 || creature.isKilled) Destroy(this);
+            if (Time.time - time >= duration || creature.isKilled) Destroy(this);
             else if (bleedDamage == null)
             {
                 time = Time.time;
@@ -57,13 +56,13 @@ namespace XenobladeRPG
             }
             else if (Time.time - cooldown >= 2 && bleedDamage != null)
             {
-                creature.Damage(bleedDamage);
+                XenobladeManager.Damage(null, creature, bleedDamage, XenobladeDamageType.Bleed);
                 cooldown = Time.time;
             }
         }
         public void OnDestroy()
         {
-            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffRemoved(this, creature, this);
         }
     }
 }

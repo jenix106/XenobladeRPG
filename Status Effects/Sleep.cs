@@ -13,7 +13,7 @@ namespace XenobladeRPG
             creature.ragdoll.SetState(Ragdoll.State.Destabilized);
             creature.ragdoll.SetState(Ragdoll.State.Inert);
             creature.brain.AddNoStandUpModifier(this);
-            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
         }
 
         private void Creature_OnDamageEvent(CollisionInstance collisionInstance)
@@ -28,7 +28,7 @@ namespace XenobladeRPG
             creature.OnDamageEvent -= Creature_OnDamageEvent;
             creature.ragdoll.SetState(Ragdoll.State.Destabilized);
             creature.brain.RemoveNoStandUpModifier(this);
-            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffRemoved(this, creature, this);
         }
     }
 }

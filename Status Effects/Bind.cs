@@ -6,17 +6,22 @@ namespace XenobladeRPG
     public class Bind : MonoBehaviour
     {
         public Creature creature;
+        public float duration = 10;
+        public bool allowMove;
         public void Start()
         {
             creature = GetComponent<Creature>();
             creature.currentLocomotion.SetSpeedModifier(this, 0, 0, 0, 0, 0);
-            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
-            Destroy(this, 10);
+            allowMove = creature.currentLocomotion.allowMove;
+            creature.currentLocomotion.allowMove = false;
+            XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
+            Destroy(this, duration);
         }
         public void OnDestroy()
         {
             creature.currentLocomotion.RemoveSpeedModifier(this);
-            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
+            creature.currentLocomotion.allowMove = allowMove;
+            XenobladeEvents.InvokeOnDebuffRemoved(this, creature, this);
         }
     }
 }

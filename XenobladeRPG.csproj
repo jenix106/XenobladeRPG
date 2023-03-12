@@ -73,29 +73,27 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bind.cs" />
-    <Compile Include="Blaze.cs" />
-    <Compile Include="Bleed.cs" />
-    <Compile Include="Chill.cs" />
-    <Compile Include="DangerBlack.cs" />
-    <Compile Include="DangerBlue.cs" />
-    <Compile Include="DangerRed.cs" />
-    <Compile Include="DangerYellow.cs" />
+    <Compile Include="Status Effects\Bind.cs" />
+    <Compile Include="Status Effects\Blaze.cs" />
+    <Compile Include="Status Effects\Bleed.cs" />
+    <Compile Include="Status Effects\Chill.cs" />
     <Compile Include="DefenseDirection.cs" />
-    <Compile Include="Poison.cs" />
-    <Compile Include="Sleep.cs" />
-    <Compile Include="Slow.cs" />
+    <Compile Include="Status Effects\Poison.cs" />
+    <Compile Include="Status Effects\Sleep.cs" />
+    <Compile Include="Status Effects\Slow.cs" />
     <Compile Include="Spike.cs" />
     <Compile Include="SpikeType.cs" />
-    <Compile Include="StatusEffect.cs" />
+    <Compile Include="Status Effects\StatusEffect.cs" />
     <Compile Include="XenobladeDamageType.cs" />
     <Compile Include="XenobladeEvents.cs" />
+    <Compile Include="XenobladeHeal.cs" />
     <Compile Include="XenobladeLevelModule.cs" />
     <Compile Include="XCRPGCheck.cs" />
     <Compile Include="XenobladeBrainModule.cs" />
     <Compile Include="XenobladeDamage.cs" />
     <Compile Include="XenobladeItemModules.cs" />
     <Compile Include="XenobladeMenu.cs" />
+    <Compile Include="XenobladeMiscDamage.cs" />
     <Compile Include="XenobladePatcher.cs" />
     <Compile Include="XenobladePlayerInfo.cs" />
     <Compile Include="XenobladeCreatureInfo.cs" />

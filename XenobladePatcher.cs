@@ -20,6 +20,29 @@ namespace XenobladeRPG
         public bool IsDefended { get; set; }
         public bool IsMissed { get; set; }
         public bool IsAlive { get; set; }
+        public XenobladeDamageType DamageType { get; set; }
+    }
+    [HarmonyPatch(typeof(Creature), nameof(Creature.Heal))]
+    public class XenobladeHealPatch
+    {
+        static void Prefix(Creature __instance, ref float heal)
+        {
+            if(__instance.player != null)
+            {
+                heal *= XenobladeManager.GetLevel();
+            }
+            else if (__instance.GetComponent<XenobladeStats>() is XenobladeStats stats)
+            {
+                heal *= stats.GetLevel();
+            }
+        }
+        static void Postfix(Creature __instance, float heal)
+        {
+            GameObject healObject = Object.Instantiate(XenobladeLevelModule.heal);
+            XenobladeHeal xenobladeHeal = healObject.AddComponent<XenobladeHeal>();
+            xenobladeHeal.creature = __instance;
+            xenobladeHeal.amount = heal;
+        }
     }
     [HarmonyPatch(typeof(Creature), nameof(Creature.Damage))]
     public class XenobladeDamagePatch
@@ -82,136 +105,164 @@ namespace XenobladeRPG
             bool isMissed = false;
             float physicalDamageMult = 1;
             float etherDamageMult = 1;
-            XenobladeDamageType type = XenobladeDamageType.Unknown;
             __state = new XenobladeIndicatorState();
+            XenobladeManager.XenobladeDamage xenobladeDamage = null;
+            foreach(XenobladeManager.XenobladeDamage damage in XenobladeManager.xenobladeDamages)
+            {
+                if(damage.collisionInstance == collisionInstance && damage.defender == __instance)
+                {
+                    xenobladeDamage = damage;
+                }
+            }
+            XenobladeDamageType type = xenobladeDamage != null ? xenobladeDamage.damageType : XenobladeDamageType.Unknown;
             if (!__instance.isKilled && collisionInstance?.damageStruct != null && collisionInstance.damageStruct.damage > 0 && collisionInstance.damageStruct.active && collisionInstance.damageStruct.damage < float.PositiveInfinity && !XenobladeManager.bypassedCollisions.ContainsKey(collisionInstance))
             {
                 float damageTotal = 0;
                 Creature attacker;
                 Item weapon = null;
-                if (collisionInstance?.casterHand?.ragdollHand?.ragdoll?.creature != null)
+                if (xenobladeDamage != null && xenobladeDamage.attacker != null)
                 {
-                    attacker = collisionInstance?.casterHand?.ragdollHand?.ragdoll?.creature;
-                }
-                else if (collisionInstance?.sourceColliderGroup?.collisionHandler?.item?.lastHandler?.creature != null)
-                {
-                    attacker = collisionInstance?.sourceColliderGroup?.collisionHandler?.item?.lastHandler?.creature;
+                    attacker = xenobladeDamage.attacker;
                     weapon = collisionInstance?.sourceColliderGroup?.collisionHandler?.item;
-                }
-                else if (collisionInstance?.sourceColliderGroup?.collisionHandler?.ragdollPart?.ragdoll?.creature != null)
-                {
-                    attacker = collisionInstance?.sourceColliderGroup?.collisionHandler?.ragdollPart?.ragdoll?.creature;
                 }
                 else
                 {
-                    attacker = Player.local.creature;
-                }
-                if (attacker == __instance && __instance.lastInteractionCreature != null)
-                {
-                    attacker = __instance.lastInteractionCreature;
-                }
-                XenobladeEvents.InvokeOnXenobladeDamage(ref collisionInstance, ref attacker, ref __instance, ref type, EventTime.OnStart);
-                DetermineHitDirection(attacker, __instance, out DefenseDirection direction);
-                try
-                {
-                    XenobladeStats attackerStats = attacker.GetComponent<XenobladeStats>();
-                    XenobladeStats defenderStats = __instance.GetComponent<XenobladeStats>();
-                    XenobladeWeaponModule weaponStats = weapon?.data?.GetModule<XenobladeWeaponModule>();
-                    int attackerLevel = attackerStats != null ? attackerStats.GetLevel() : XenobladeManager.GetLevel();
-                    int defenderLevel = defenderStats != null ? defenderStats.GetLevel() : XenobladeManager.GetLevel();
-                    int attackerAgility = attackerStats != null ? attackerStats.GetAgility() : Mathf.FloorToInt(XenobladeManager.GetAgility());
-                    int defenderAgility = defenderStats != null ? defenderStats.GetAgility() : Mathf.FloorToInt(XenobladeManager.GetAgility());
-                    if (attackerLevel >= defenderLevel + 6) physicalDamageMult = 2f;
-                    else if (attackerLevel >= defenderLevel + 3) physicalDamageMult = 1.5f;
-                    else if (attackerLevel <= defenderLevel - 3) physicalDamageMult = 0.75f;
-                    else if (attackerLevel <= defenderLevel - 6) physicalDamageMult = 0.5f;
-                    if (attackerLevel >= defenderLevel + 7) etherDamageMult = 1.5f; 
-                    else if (attackerLevel >= defenderLevel + 4) etherDamageMult = 1.25f;
-                    else if (attackerLevel <= defenderLevel + 4) etherDamageMult = 0.75f;
-                    else if (attackerLevel <= defenderLevel + 7) etherDamageMult = 0.5f;
-                    DetermineHitRateModifiers(attackerLevel, defenderLevel, attackerAgility, defenderAgility, out float blockRateModifier, out float physicalHitRate, out float etherHitRate, out float evadeRate);
-                    float blockRate = defenderStats ? 0 : XenobladeManager.GetBlockRate();
-                    float criticalRate = attackerStats ? attackerStats.GetCriticalRate() : XenobladeManager.GetCriticalRate();
-                    if (defenderStats != null && (direction == defenderStats.defenseDirection ||
-                        ((direction == DefenseDirection.Front || direction == DefenseDirection.Back) && defenderStats.defenseDirection == DefenseDirection.FrontAndBack) ||
-                        (direction == DefenseDirection.Right || direction == DefenseDirection.Left) && defenderStats.defenseDirection == DefenseDirection.Side ||
-                        defenderStats.defenseDirection == DefenseDirection.All))
+                    if (collisionInstance?.casterHand?.ragdollHand?.ragdoll?.creature != null)
                     {
-                        isDefended = true;
+                        attacker = collisionInstance?.casterHand?.ragdollHand?.ragdoll?.creature;
                     }
-                    if (collisionInstance?.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance.damageStruct.damager == null)
+                    else if (collisionInstance?.sourceColliderGroup?.collisionHandler?.item?.lastHandler?.creature != null)
                     {
-                        damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetEther() : (attackerStats ? attackerStats.GetEther() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
-                        if (Random.Range(1, 101) <= 100 - (etherHitRate * 100)) isResisted = true;
-                        if (__instance.state == Creature.State.Destabilized) isResisted = false;
-                        if ((Random.Range(1, 101) <= criticalRate * 100 || __instance.state == Creature.State.Destabilized) && !isResisted) isCritical = true;
-                        if (defenderStats?.GetEtherDefense() <= 0) isDefended = false;
-                        if (isDefended) damageTotal *= 1 - defenderStats.GetEtherDefense();
-                        if (__instance.isPlayer)
-                        {
-                            damageTotal = Mathf.Max(damageTotal - XenobladeManager.GetEtherDefense(), 0);
-                        }
-                        if (attacker.isPlayer && !isResisted) XenobladeManager.EtherHits++;
-                        damageTotal *= etherDamageMult;
-                        type = XenobladeDamageType.Ether;
+                        attacker = collisionInstance?.sourceColliderGroup?.collisionHandler?.item?.lastHandler?.creature;
+                        weapon = collisionInstance?.sourceColliderGroup?.collisionHandler?.item;
+                    }
+                    else if (collisionInstance?.sourceColliderGroup?.collisionHandler?.ragdollPart?.ragdoll?.creature != null)
+                    {
+                        attacker = collisionInstance?.sourceColliderGroup?.collisionHandler?.ragdollPart?.ragdoll?.creature;
                     }
                     else
                     {
-                        damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetStrength() : (attackerStats ? attackerStats.GetStrength() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
-                        if (Random.Range(1, 101) <= 100 - (physicalHitRate * 100)) isMissed = true;
-                        if (Random.Range(1, 101) <= (evadeRate * 100)) isMissed = true;
-                        if (__instance.state == Creature.State.Destabilized || collisionInstance.damageStruct.penetration == DamageStruct.Penetration.Skewer || collisionInstance.damageStruct.damage == float.PositiveInfinity) isMissed = false;
-                        if (Random.Range(1, 101) <= (blockRate + blockRateModifier) * 100) isBlocked = true;
-                        if (Random.Range(1, 101) <= (criticalRate * 100) && !isBlocked) isCritical = true;
-                        if (defenderStats?.GetPhysicalDefense() <= 0) isDefended = false;
-                        if (isDefended) damageTotal *= 1 - defenderStats.GetPhysicalDefense();
-                        if (__instance.isPlayer)
-                        {
-                            damageTotal = Mathf.Max(damageTotal - XenobladeManager.GetPhysicalDefense(), 0);
-                        }
-                        if (attacker.isPlayer && !isMissed) XenobladeManager.StrengthHits++;
-                        damageTotal *= physicalDamageMult;
-                        type = XenobladeDamageType.Physical;
+                        attacker = Player.local.creature;
                     }
-                    if (defenderStats.isToppled && (collisionInstance.targetColliderGroup?.collisionHandler?.ragdollPart?.type == RagdollPart.Type.Head || __instance.brain.isElectrocuted)) defenderStats.isDazed = true;
-                }
-                catch
-                {
-                    if (collisionInstance?.damageStruct != null)
+                    if (attacker == __instance && __instance.lastInteractionCreature != null)
                     {
-                        if (collisionInstance.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance.damageStruct.damager == null)
+                        attacker = __instance.lastInteractionCreature;
+                    }
+                }
+                XenobladeEvents.InvokeOnXenobladeDamage(ref collisionInstance, ref attacker, ref __instance, ref type, EventTime.OnStart);
+                DetermineHitDirection(attacker, __instance, out DefenseDirection direction);
+                if (xenobladeDamage?.damageType == XenobladeDamageType.Physical || xenobladeDamage?.damageType == XenobladeDamageType.Ether || xenobladeDamage == null)
+                {
+                    try
+                    {
+                        XenobladeStats attackerStats = attacker.GetComponent<XenobladeStats>();
+                        XenobladeStats defenderStats = __instance.GetComponent<XenobladeStats>();
+                        XenobladeWeaponModule weaponStats = weapon?.data?.GetModule<XenobladeWeaponModule>();
+                        int attackerLevel = attackerStats != null ? attackerStats.GetLevel() : XenobladeManager.GetLevel();
+                        int defenderLevel = defenderStats != null ? defenderStats.GetLevel() : XenobladeManager.GetLevel();
+                        int attackerAgility = attackerStats != null ? attackerStats.GetAgility() : Mathf.FloorToInt(XenobladeManager.GetAgility());
+                        int defenderAgility = defenderStats != null ? defenderStats.GetAgility() : Mathf.FloorToInt(XenobladeManager.GetAgility());
+                        if (attackerLevel >= defenderLevel + 6) physicalDamageMult = 2f;
+                        else if (attackerLevel >= defenderLevel + 3) physicalDamageMult = 1.5f;
+                        else if (attackerLevel <= defenderLevel - 3) physicalDamageMult = 0.75f;
+                        else if (attackerLevel <= defenderLevel - 6) physicalDamageMult = 0.5f;
+                        if (attackerLevel >= defenderLevel + 7) etherDamageMult = 1.5f;
+                        else if (attackerLevel >= defenderLevel + 4) etherDamageMult = 1.25f;
+                        else if (attackerLevel <= defenderLevel - 4) etherDamageMult = 0.75f;
+                        else if (attackerLevel <= defenderLevel - 7) etherDamageMult = 0.5f;
+                        DetermineHitRateModifiers(attackerLevel, defenderLevel, attackerAgility, defenderAgility, out float blockRateModifier, out float physicalHitRate, out float etherHitRate, out float evadeRate);
+                        float blockRate = defenderStats ? 0 : XenobladeManager.GetBlockRate();
+                        float criticalRate = attackerStats ? attackerStats.GetCriticalRate() : XenobladeManager.GetCriticalRate();
+                        if (defenderStats != null && (direction == defenderStats.defenseDirection ||
+                            ((direction == DefenseDirection.Front || direction == DefenseDirection.Back) && defenderStats.defenseDirection == DefenseDirection.FrontAndBack) ||
+                            (direction == DefenseDirection.Right || direction == DefenseDirection.Left) && defenderStats.defenseDirection == DefenseDirection.Side ||
+                            defenderStats.defenseDirection == DefenseDirection.All))
                         {
-                            damageTotal += collisionInstance.damageStruct.damage + XenobladeManager.GetEther();
-                            if (__instance.state == Creature.State.Destabilized) isCritical = true;
-                            if (attacker.isPlayer) XenobladeManager.EtherHits++;
+                            isDefended = true;
+                        }
+                        if (xenobladeDamage?.damageType == XenobladeDamageType.Ether || collisionInstance?.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance.damageStruct.damager == null)
+                        {
+                            damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetEther() : (attackerStats ? attackerStats.GetEther() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
+                            if (Random.Range(1, 101) <= 100 - (etherHitRate * 100)) isResisted = true;
+                            if (__instance.state == Creature.State.Destabilized) isResisted = false;
+                            if ((Random.Range(1, 101) <= criticalRate * 100 || __instance.state == Creature.State.Destabilized) && !isResisted) isCritical = true;
+                            if (defenderStats?.GetEtherDefense() <= 0) isDefended = false;
+                            if (isDefended) damageTotal *= 1 - defenderStats.GetEtherDefense();
+                            if (__instance.isPlayer)
+                            {
+                                damageTotal = Mathf.Max(damageTotal - XenobladeManager.GetEtherDefense(), 0);
+                            }
+                            if (attacker.isPlayer && !isResisted) XenobladeManager.EtherHits++;
+                            damageTotal *= etherDamageMult;
                             type = XenobladeDamageType.Ether;
                         }
-                        else
+                        else if (xenobladeDamage?.damageType == XenobladeDamageType.Physical || xenobladeDamage == null)
                         {
-                            damageTotal += collisionInstance.damageStruct.damage + XenobladeManager.GetStrength();
-                            if (attacker.isPlayer) XenobladeManager.StrengthHits++;
+                            damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetStrength() : (attackerStats ? attackerStats.GetStrength() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
+                            if (Random.Range(1, 101) <= 100 - (physicalHitRate * 100)) isMissed = true;
+                            if (Random.Range(1, 101) <= (evadeRate * 100)) isMissed = true;
+                            if (__instance.state == Creature.State.Destabilized || collisionInstance.damageStruct.penetration == DamageStruct.Penetration.Skewer || collisionInstance.damageStruct.damage == float.PositiveInfinity) isMissed = false;
+                            if (Random.Range(1, 101) <= (blockRate + blockRateModifier) * 100) isBlocked = true;
+                            if (Random.Range(1, 101) <= (criticalRate * 100) && !isBlocked) isCritical = true;
+                            if (defenderStats?.GetPhysicalDefense() <= 0) isDefended = false;
+                            if (isDefended) damageTotal *= 1 - defenderStats.GetPhysicalDefense();
+                            if (__instance.isPlayer)
+                            {
+                                damageTotal = Mathf.Max(damageTotal - XenobladeManager.GetPhysicalDefense(), 0);
+                            }
+                            if (attacker.isPlayer && !isMissed) XenobladeManager.StrengthHits++;
+                            damageTotal *= physicalDamageMult;
                             type = XenobladeDamageType.Physical;
                         }
+                        if (defenderStats.isToppled && (collisionInstance.targetColliderGroup?.collisionHandler?.ragdollPart?.type == RagdollPart.Type.Head || __instance.brain.isElectrocuted)) defenderStats.isDazed = true;
                     }
-                }
-                if (collisionInstance != null && !__instance.isPlayer && (__instance?.brain?.currentTarget == null || (__instance?.brain != null && __instance.brain.currentTarget != attacker)))
-                {
-                    damageTotal *= 5;
-                    isBlocked = false;
-                    isResisted = false;
-                    isSneakAttack = true;
-                    isCritical = true;
-                    isMissed = false;
-                }
-                if (__instance.GetComponent<XenobladeStats>() is XenobladeStats asleep && asleep.isSleeping) isCritical = true;
-                if ((collisionInstance?.sourceCollider?.attachedRigidbody != null && collisionInstance?.targetCollider?.attachedRigidbody != null) || collisionInstance?.casterHand != null)
-                {
-                    if (!isSneakAttack && isCritical)
+                    catch
                     {
-                        damageTotal *= 1.25f + (__instance.state == Creature.State.Destabilized ? 0.25f : 0);
+                        if (collisionInstance?.damageStruct != null)
+                        {
+                            Debug.LogWarning("Xenoblade Damage ran into an issue, defaulting to fallback");
+                            if (xenobladeDamage?.damageType == XenobladeDamageType.Ether || collisionInstance?.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance?.damageStruct.damager == null)
+                            {
+                                damageTotal += collisionInstance.damageStruct.damage + XenobladeManager.GetEther();
+                                if (__instance.state == Creature.State.Destabilized) isCritical = true;
+                                if (attacker.isPlayer) XenobladeManager.EtherHits++;
+                                type = XenobladeDamageType.Ether;
+                            }
+                            else if (xenobladeDamage?.damageType == XenobladeDamageType.Physical || xenobladeDamage == null)
+                            {
+                                damageTotal += collisionInstance.damageStruct.damage + XenobladeManager.GetStrength();
+                                if (attacker.isPlayer) XenobladeManager.StrengthHits++;
+                                type = XenobladeDamageType.Physical;
+                            }
+                        }
                     }
+                    if (xenobladeDamage != null) damageTotal *= xenobladeDamage.baseDamageMultiplier;
+                    if (xenobladeDamage != null && (xenobladeDamage.additionalDamageDirection == direction ||
+                            ((direction == DefenseDirection.Front || direction == DefenseDirection.Back) && xenobladeDamage.additionalDamageDirection == DefenseDirection.FrontAndBack) ||
+                            (direction == DefenseDirection.Right || direction == DefenseDirection.Left) && xenobladeDamage.additionalDamageDirection == DefenseDirection.Side ||
+                            xenobladeDamage.additionalDamageDirection == DefenseDirection.All) && xenobladeDamage.additionalDamageDirection != DefenseDirection.None)
+                    {
+                        damageTotal *= xenobladeDamage.directionalDamageMultiplier;
+                    }
+                    if (collisionInstance != null && !__instance.isPlayer && (__instance?.brain?.currentTarget == null || (__instance?.brain != null && __instance.brain.currentTarget != attacker)))
+                    {
+                        damageTotal *= 5;
+                        isBlocked = false;
+                        isResisted = false;
+                        isSneakAttack = true;
+                        isCritical = true;
+                        isMissed = false;
+                    }
+                    if (__instance.GetComponent<XenobladeStats>() is XenobladeStats asleep && asleep.isSleeping) isCritical = true;
+                    if ((collisionInstance?.sourceCollider?.attachedRigidbody != null && collisionInstance?.targetCollider?.attachedRigidbody != null) || collisionInstance?.casterHand != null)
+                    {
+                        if (!isSneakAttack && isCritical)
+                        {
+                            damageTotal *= 1.25f + (__instance.state == Creature.State.Destabilized ? 0.25f : 0);
+                        }
+                    }
+                    collisionInstance.damageStruct.damage = damageTotal;
                 }
-                collisionInstance.damageStruct.damage = damageTotal;
                 if (isBlocked)
                 {
                     collisionInstance.damageStruct.damage *= 0.5f;
@@ -238,6 +289,7 @@ namespace XenobladeRPG
             __state.IsDefended = isDefended;
             __state.IsMissed = isMissed;
             __state.IsAlive = !__instance.isKilled;
+            __state.DamageType = type;
             if (XenobladeManager.bypassedCollisions.ContainsKey(collisionInstance))
                 XenobladeEvents.InvokeOnBypassedDamage(ref collisionInstance, ref __instance, XenobladeManager.bypassedCollisions[collisionInstance], ref __state);
             if (isMissed)
@@ -245,14 +297,14 @@ namespace XenobladeRPG
                 if (!__instance.isKilled && collisionInstance?.damageStruct != null)
                 {
                     GameObject dmg = Object.Instantiate(XenobladeLevelModule.damage);
-                    XenobladeDamage xenobladeDamage = dmg.AddComponent<XenobladeDamage>();
-                    xenobladeDamage.creature = __instance;
-                    xenobladeDamage.instance = collisionInstance;
-                    xenobladeDamage.isCritical = isCritical;
-                    xenobladeDamage.isResisted = isResisted;
-                    xenobladeDamage.isBlocked = isBlocked;
-                    xenobladeDamage.isDefended = isDefended;
-                    xenobladeDamage.isMissed = isMissed;
+                    XenobladeDamage xenobladeDamage1 = dmg.AddComponent<XenobladeDamage>();
+                    xenobladeDamage1.creature = __instance;
+                    xenobladeDamage1.instance = collisionInstance;
+                    xenobladeDamage1.isCritical = isCritical;
+                    xenobladeDamage1.isResisted = isResisted;
+                    xenobladeDamage1.isBlocked = isBlocked;
+                    xenobladeDamage1.isDefended = isDefended;
+                    xenobladeDamage1.isMissed = isMissed;
                 }
             }
             if (!XenobladeManager.recordedCollisions.ContainsKey(collisionInstance))
@@ -267,15 +319,32 @@ namespace XenobladeRPG
         {
             if (__state.IsAlive && collisionInstance?.damageStruct != null && collisionInstance.damageStruct.active && collisionInstance.damageStruct.damage < float.PositiveInfinity && collisionInstance.damageStruct.damage >= 0)
             {
-                GameObject dmg = Object.Instantiate(XenobladeLevelModule.damage);
-                XenobladeDamage xenobladeDamage = dmg.AddComponent<XenobladeDamage>();
-                xenobladeDamage.creature = __instance;
-                xenobladeDamage.instance = collisionInstance;
-                xenobladeDamage.isCritical = __state.IsCritical;
-                xenobladeDamage.isResisted = __state.IsResisted;
-                xenobladeDamage.isBlocked = __state.IsBlocked;
-                xenobladeDamage.isDefended = __state.IsDefended;
-                xenobladeDamage.isMissed = __state.IsMissed;
+                if (__state.DamageType == XenobladeDamageType.Physical || __state.DamageType == XenobladeDamageType.Ether)
+                {
+                    GameObject dmg = Object.Instantiate(XenobladeLevelModule.damage);
+                    XenobladeDamage xenobladeDamage = dmg.AddComponent<XenobladeDamage>();
+                    xenobladeDamage.creature = __instance;
+                    xenobladeDamage.instance = collisionInstance;
+                    xenobladeDamage.isCritical = __state.IsCritical;
+                    xenobladeDamage.isResisted = __state.IsResisted;
+                    xenobladeDamage.isBlocked = __state.IsBlocked;
+                    xenobladeDamage.isDefended = __state.IsDefended;
+                    xenobladeDamage.isMissed = __state.IsMissed;
+                }
+                else if (__state.DamageType == XenobladeDamageType.Electric || __state.DamageType == XenobladeDamageType.Spike)
+                {
+                    GameObject dmg = Object.Instantiate(XenobladeLevelModule.electricDamage);
+                    XenobladeMiscDamage xenobladeDamage = dmg.AddComponent<XenobladeMiscDamage>();
+                    xenobladeDamage.creature = __instance;
+                    xenobladeDamage.instance = collisionInstance;
+                }
+                else
+                {
+                    GameObject dmg = Object.Instantiate(XenobladeLevelModule.statusDamage);
+                    XenobladeMiscDamage xenobladeDamage = dmg.AddComponent<XenobladeMiscDamage>();
+                    xenobladeDamage.creature = __instance;
+                    xenobladeDamage.instance = collisionInstance;
+                }
             }
         }
     }

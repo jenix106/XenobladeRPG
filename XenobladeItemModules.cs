@@ -13,7 +13,9 @@ namespace XenobladeRPG
             base.OnEquip(creature, equippedOn, wardrobeData);
             if (creature?.player != null)
             {
-                XenobladeManager.SetStatModifier(this, 1, 1, 1, 1, 1, 0, 0, physicalDefense, etherDefense, weight, 0, 0);
+                XenobladeManager.SetPhysicalDefenseModifier(this, 1, physicalDefense);
+                XenobladeManager.SetEtherDefenseModifier(this, 1, etherDefense);
+                XenobladeManager.SetAgilityModifier(this, 1, weight);
             }
         }
         public override void OnUnequip(Creature creature, ApparelModuleType equippedOn, ItemModuleWardrobe.CreatureWardrobe wardrobeData)
@@ -21,7 +23,8 @@ namespace XenobladeRPG
             base.OnUnequip(creature, equippedOn, wardrobeData);
             if (creature?.player != null)
             {
-                XenobladeManager.RemoveStatModifier(this);
+                XenobladeManager.RemovePhysicalDefenseModifier(this);
+                XenobladeManager.RemoveEtherDefenseModifier(this);
             }
         }
     }
@@ -66,12 +69,24 @@ namespace XenobladeRPG
 
         private void Item_OnUngrabEvent(Handle handle, RagdollHand ragdollHand, bool throwing)
         {
-            if (ragdollHand.creature.isPlayer && ragdollHand.otherHand.grabbedHandle?.item != item) XenobladeManager.RemoveStatModifier(item);
+            if (ragdollHand.creature.isPlayer && ragdollHand.otherHand.grabbedHandle?.item != item)
+            {
+                XenobladeManager.RemovePhysicalDefenseModifier(item);
+                XenobladeManager.RemoveEtherDefenseModifier(item);
+                XenobladeManager.RemoveCriticalRateModifier(item);
+                XenobladeManager.RemoveBlockRateModifier(item);
+            }
         }
 
         private void Item_OnGrabEvent(Handle handle, RagdollHand ragdollHand)
         {
-            if (ragdollHand.creature.isPlayer && ragdollHand.otherHand.grabbedHandle?.item != item) XenobladeManager.SetStatModifier(item, 1, 1, 1, 1, 1, 0, 0, physicalDefense, etherDefense, 0, criticalRate, blockRate);
+            if (ragdollHand.creature.isPlayer && ragdollHand.otherHand.grabbedHandle?.item != item)
+            {
+                XenobladeManager.SetPhysicalDefenseModifier(item, 1, physicalDefense);
+                XenobladeManager.SetEtherDefenseModifier(item, 1, etherDefense);
+                XenobladeManager.SetCriticalRateModifier(item, criticalRate);
+                XenobladeManager.SetBlockRateModifier(item, blockRate);
+            }
         }
     }
 }

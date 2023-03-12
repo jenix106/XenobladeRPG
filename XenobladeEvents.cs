@@ -11,33 +11,33 @@ namespace XenobladeRPG
         public static event OnDebuffRemoved onDebuffRemoved;
         public static event OnXenobladeDamage onXenobladeDamage;
         public static event OnBypassedDamage onBypassedDamage;
-        public static void InvokeOnBuffAdded(ref Creature creature, Component buff = null, XenobladeManager.PlayerStatModifier playerStatModifier = null, XenobladeStats.StatModifier creatureStatModifier = null)
+        public static void InvokeOnBuffAdded(object handler, Creature creature, Component buff = null)
         {
             OnBuffAdded onBuffAdded = XenobladeEvents.onBuffAdded;
             if (onBuffAdded == null)
                 return;
-            onBuffAdded(ref creature, buff, playerStatModifier, creatureStatModifier);
+            onBuffAdded(handler, creature, buff);
         }
-        public static void InvokeOnBuffRemoved(ref Creature creature, Component buff = null)
+        public static void InvokeOnBuffRemoved(object handler, Creature creature, Component buff = null)
         {
             OnBuffRemoved onBuffRemoved = XenobladeEvents.onBuffRemoved;
             if (onBuffRemoved == null)
                 return;
-            onBuffRemoved(ref creature, buff);
+            onBuffRemoved(handler, creature, buff);
         }
-        public static void InvokeOnDebuffAdded(ref Creature creature, Component debuff = null, XenobladeManager.PlayerStatModifier playerStatModifier = null, XenobladeStats.StatModifier creatureStatModifier = null)
+        public static void InvokeOnDebuffAdded(object handler, Creature creature, Component debuff = null)
         {
             OnDebuffAdded onDebuffAdded = XenobladeEvents.onDebuffAdded;
             if (onDebuffAdded == null)
                 return;
-            onDebuffAdded(ref creature, debuff, playerStatModifier, creatureStatModifier);
+            onDebuffAdded(handler, creature, debuff);
         }
-        public static void InvokeOnDebuffRemoved(ref Creature creature, Component debuff = null)
+        public static void InvokeOnDebuffRemoved(object handler, Creature creature, Component debuff = null)
         {
             OnDebuffRemoved onDebuffRemoved = XenobladeEvents.onDebuffRemoved;
             if (onDebuffRemoved == null)
                 return;
-            onDebuffRemoved(ref creature, debuff);
+            onDebuffRemoved(handler, creature, debuff);
         }
         public static void InvokeOnXenobladeDamage(ref CollisionInstance collisionInstance, ref Creature attacker, ref Creature defender, ref XenobladeDamageType damageType, EventTime eventTime)
         {
@@ -53,10 +53,10 @@ namespace XenobladeRPG
                 return;
             onBypassedDamage(ref collisionInstance, ref defender, ref damageType, ref state);
         }
-        public delegate void OnBuffAdded(ref Creature creature, Component buff = null, XenobladeManager.PlayerStatModifier playerStatModifier = null, XenobladeStats.StatModifier creatureStatModifier = null);
-        public delegate void OnBuffRemoved(ref Creature creature, Component buff = null);
-        public delegate void OnDebuffAdded(ref Creature creature, Component debuff = null, XenobladeManager.PlayerStatModifier playerStatModifier = null, XenobladeStats.StatModifier creatureStatModifier = null);
-        public delegate void OnDebuffRemoved(ref Creature creature, Component debuff = null);
+        public delegate void OnBuffAdded(object handler, Creature creature, Component buff = null);
+        public delegate void OnBuffRemoved(object handler, Creature creature, Component buff = null);
+        public delegate void OnDebuffAdded(object handler, Creature creature, Component debuff = null);
+        public delegate void OnDebuffRemoved(object handler, Creature creature, Component debuff = null);
         public delegate void OnXenobladeDamage(ref CollisionInstance collisionInstance, ref Creature attacker, ref Creature defender, ref XenobladeDamageType damageType, EventTime eventTime);
         public delegate void OnBypassedDamage(ref CollisionInstance collisionInstance, ref Creature defender, ref XenobladeDamageType damageType, ref XenobladeIndicatorState state);
     }

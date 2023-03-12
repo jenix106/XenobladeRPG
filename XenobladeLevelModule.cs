@@ -9,6 +9,9 @@ namespace XenobladeRPG
         public static GameObject currentBar;
         public static GameObject playerInfo;
         public static GameObject damage;
+        public static GameObject heal;
+        public static GameObject statusDamage;
+        public static GameObject electricDamage;
         public override IEnumerator OnLoadCoroutine()
         {
             EventManager.onCreatureSpawn += EventManager_onCreatureSpawn;
@@ -78,6 +81,18 @@ namespace XenobladeRPG
             {
                 damage = value;
             }, "XenobladeRPG");
+            Catalog.LoadAssetAsync<GameObject>("Jenix.XenobladeHealUI", value =>
+            {
+                heal = value;
+            }, "XenobladeRPG");
+            Catalog.LoadAssetAsync<GameObject>("Jenix.XenobladeStatusDamageUI", value =>
+            {
+                statusDamage = value;
+            }, "XenobladeRPG");
+            Catalog.LoadAssetAsync<GameObject>("Jenix.XenobladeElectricDamageUI", value =>
+            {
+                electricDamage = value;
+            }, "XenobladeRPG");
             XenobladePatcher.DoPatching();
             if (level?.GetComponent<QuitComponent>() != null)
                 level.gameObject.AddComponent<QuitComponent>();
@@ -106,7 +121,13 @@ namespace XenobladeRPG
         {
             if(item.data.GetModule<XenobladeWeaponModule>() is XenobladeWeaponModule weaponModule)
             {
-                if (item.mainHandler.creature.isPlayer && item.mainHandler.otherHand.grabbedHandle?.item != item) XenobladeManager.SetStatModifier(item, 1, 1, 1, 1, 1, 0, 0, weaponModule.physicalDefense, weaponModule.etherDefense, 0, weaponModule.criticalRate, weaponModule.blockRate);
+                if (item.mainHandler.creature.isPlayer && item.mainHandler.otherHand.grabbedHandle?.item != item)
+                {
+                    XenobladeManager.SetPhysicalDefenseModifier(item, 1, weaponModule.physicalDefense);
+                    XenobladeManager.SetEtherDefenseModifier(item, 1, weaponModule.etherDefense);
+                    XenobladeManager.SetCriticalRateModifier(item, weaponModule.criticalRate);
+                    XenobladeManager.SetBlockRateModifier(item, weaponModule.blockRate);
+                }
             }
         }
 
@@ -151,13 +172,32 @@ namespace XenobladeRPG
                 if (creature.GetComponent<XenobladeStats>() is XenobladeStats stats)
                 {
                     float xpGained = 10;
+                    float apGained = 10;
+                    float spGained = 10;
                     for (int i = 1; i <= stats.GetLevel(); i++)
                     {
-                        xpGained += Mathf.Pow(2, (3 + Mathf.FloorToInt(i / 10)));
+                        xpGained += Mathf.Pow(2, (3 + Mathf.FloorToInt(i / 15)));
+                        apGained += 3;
                     }
-                    if (stats.isUnique) xpGained *= 1.5f;
-                    if (stats.GetLevel() >= XenobladeManager.GetLevel() + 6) xpGained *= 0.1f;
-                    else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 3) xpGained *= 0.5f;
+                    if (stats.isUnique)
+                    {
+                        xpGained *= 2f;
+                        apGained *= 2f;
+                    }
+                    if (stats.overrideXP > -1) xpGained = stats.overrideXP;
+                    if (stats.overrideAP > -1) apGained = stats.overrideAP;
+                    if (stats.GetLevel() >= XenobladeManager.GetLevel() + 6)
+                    {
+                        xpGained *= 0.1f;
+                        apGained *= 0.1f;
+                        spGained = 1;
+                    }
+                    else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 3)
+                    {
+                        xpGained *= 0.5f;
+                        apGained *= 0.5f;
+                        spGained = 5;
+                    }
                     else if (stats.GetLevel() <= XenobladeManager.GetLevel() - 6)
                     {
                         if (stats.GetLevel() > XenobladeManager.GetLevel() + 21)
@@ -168,10 +208,22 @@ namespace XenobladeRPG
                                 xpGained += Mathf.Pow(2, (3 + Mathf.FloorToInt(i / 10)));
                             }
                         }
-                        else xpGained *= 1.5f;
+                        else
+                        {
+                            xpGained *= 1.5f;
+                        }
+                        apGained *= 1.5f;
+                        spGained = 20;
                     }
-                    else if (stats.GetLevel() <= XenobladeManager.GetLevel() - 3) xpGained *= 1.25f;
+                    else if (stats.GetLevel() <= XenobladeManager.GetLevel() - 3)
+                    {
+                        xpGained *= 1.25f;
+                        apGained *= 1.25f;
+                        spGained = 15;
+                    }
                     XenobladeManager.AddXP(Mathf.RoundToInt(xpGained));
+                    XenobladeManager.AddAP(Mathf.RoundToInt(apGained));
+                    XenobladeManager.AddSP(Mathf.RoundToInt(spGained));
                 }
             }
         }
@@ -194,7 +246,9 @@ namespace XenobladeRPG
                 {
                     if(content.itemData.GetModule<XenobladeArmorModule>() is XenobladeArmorModule armorModule)
                     {
-                        XenobladeManager.SetStatModifier(armorModule, 1, 1, 1, 1, 1, 0, 0, armorModule.physicalDefense, armorModule.etherDefense, armorModule.weight, 0, 0);
+                        XenobladeManager.SetPhysicalDefenseModifier(armorModule, 1, armorModule.physicalDefense);
+                        XenobladeManager.SetEtherDefenseModifier(armorModule, 1, armorModule.etherDefense);
+                        XenobladeManager.SetAgilityModifier(armorModule, 1, armorModule.weight);
                     }
                 }
             }

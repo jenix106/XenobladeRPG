@@ -15,11 +15,12 @@ namespace XenobladeRPG
         CollisionInstance chillDamage;
         public float time = 0;
         float cooldown = 0;
+        public float duration = 10;
         public void Start()
         {
             if (creature == null)
                 creature = GetComponent<Creature>();
-            XenobladeEvents.InvokeOnDebuffAdded(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
             if (initialDamage == null)
             {
                 Debug.LogError("Chill components require an initial collision instance, as it deals 60% of the original damage per tick. Please add a collision instance to the 'initialDamage' variable in the Chill component and Damage() the creature with that instance.");
@@ -29,7 +30,6 @@ namespace XenobladeRPG
             {
                 chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(initialDamage.damageStruct.damage * 0.6f, 1)));
                 chillDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(chillDamage, XenobladeDamageType.Chill);
             }
             else
             {
@@ -45,7 +45,6 @@ namespace XenobladeRPG
             {
                 chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.6f, 1)));
                 chillDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;
-                XenobladeManager.BypassXenobladeDamage(chillDamage, XenobladeDamageType.Chill);
                 time = Time.time;
                 cooldown = Time.time;
                 creature.OnDamageEvent -= Creature_OnDamageEvent;
@@ -54,7 +53,7 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (Time.time - time >= 10 || creature.isKilled) Destroy(this);
+            if (Time.time - time >= duration || creature.isKilled) Destroy(this);
             else if (chillDamage == null)
             {
                 time = Time.time;
@@ -62,13 +61,13 @@ namespace XenobladeRPG
             }
             else if (Time.time - cooldown >= 2 && chillDamage != null)
             {
-                creature.Damage(chillDamage);
+                XenobladeManager.Damage(null, creature, chillDamage, XenobladeDamageType.Chill);
                 cooldown = Time.time;
             }
         }
         public void OnDestroy()
         {
-            XenobladeEvents.InvokeOnDebuffRemoved(ref creature, this);
+            XenobladeEvents.InvokeOnDebuffRemoved(this, creature, this);
         }
     }
 }

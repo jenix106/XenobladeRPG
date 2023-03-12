@@ -20,6 +20,8 @@ namespace XenobladeRPG
         public int overrideStrength;
         public int overrideEther;
         public int overrideAgility;
+        public int overrideXP;
+        public int overrideAP;
         protected int strength;
         protected int baseStrength;
         protected int ether;
@@ -41,6 +43,25 @@ namespace XenobladeRPG
         public bool forceDetection;
         public bool isSleeping;
         public bool isAuraSealed = false;
+        public bool isParalyzed = false;
+        public bool isArtsSealed = false;
+        public bool isBinded = false;
+        public bool isPoisoned = false;
+        public bool isBurning = false;
+        public bool isBleeding = false;
+        public bool isShielded = false;
+        public bool isArmored = false;
+        public bool isEnchanted = false;
+        public bool isFreezing = false;
+        public bool isLockedOn = false;
+        public bool isConfused = false;
+        public bool isPierced = false;
+        public bool isRegen = false;
+        public bool isDamageHealed = false;
+        public bool isDebuffResistant = false;
+        public bool isReflecting = false;
+        public bool isDamageImmune = false;
+        public bool isPhysicalArtsPlus = false;
         protected float baseAttackSpeedMultiplier = 1;
         public DefenseDirection defenseDirection;
         public Dictionary<RagdollPart, bool> partDismemberment = new Dictionary<RagdollPart, bool>();
@@ -49,7 +70,13 @@ namespace XenobladeRPG
         public bool isBroken = false;
         bool isMage = false;
         bool isLongDistanceMage = false;
-        public List<StatModifier> statModifiers = new List<StatModifier>();
+        public List<StrengthModifier> strengthModifiers = new List<StrengthModifier>();
+        public List<EtherModifier> etherModifiers = new List<EtherModifier>();
+        public List<PhysicalDefenseModifier> physicalDefenseModifiers = new List<PhysicalDefenseModifier>();
+        public List<EtherDefenseModifier> etherDefenseModifiers = new List<EtherDefenseModifier>();
+        public List<AgilityModifier> agilityModifiers = new List<AgilityModifier>();
+        public List<CriticalRateModifier> criticalRateModifiers = new List<CriticalRateModifier>();
+        public List<HealthModifier> healthModifiers = new List<HealthModifier>();
         protected float healthMultiplier = 1;
         protected float strengthMultiplier = 1;
         protected float etherMultiplier = 1;
@@ -94,39 +121,349 @@ namespace XenobladeRPG
         public float GetBaseEtherDefense() => baseEtherDefense;
         public int GetBaseAgility() => baseAgility;
         public float GetBaseCriticalRate() => baseCriticalRate;
-        public float GetBaseAttackSpeedMultiplier() => baseAttackSpeedMultiplier;
-        public class StatModifier
+        public float GetBaseAttackSpeedMultiplier() => baseAttackSpeedMultiplier; 
+        public class StrengthModifier
         {
             public object handler;
-            public float healthMultiplier;
-            public float strengthMultiplier;
-            public float etherMultiplier;
-            public float agilityMultiplier;
-            public float physicalDefenseModifier;
-            public float etherDefenseModifier;
-            public float agilityModifier;
-            public float criticalRateModifier;
-            public StatModifier(
-              object handler,
-              float healthMultiplier,
-              float strengthMultiplier,
-              float etherMultiplier,
-              float agilityMultiplier,
-              float physicalDefenseModifier,
-              float etherDefenseModifier,
-              float agilityModifier,
-              float criticalRateModifier)
+            public float multiplier;
+            public StrengthModifier(
+                object handler,
+                float multiplier = 1
+                )
             {
                 this.handler = handler;
-                this.healthMultiplier = healthMultiplier;
-                this.strengthMultiplier = strengthMultiplier;
-                this.etherMultiplier = etherMultiplier;
-                this.agilityMultiplier = agilityMultiplier;
-                this.physicalDefenseModifier = physicalDefenseModifier;
-                this.etherDefenseModifier = etherDefenseModifier;
-                this.agilityModifier = agilityModifier;
-                this.criticalRateModifier = criticalRateModifier;
+                this.multiplier = multiplier;
             }
+        }
+        public class EtherModifier
+        {
+            public object handler;
+            public float multiplier;
+            public EtherModifier(
+                object handler,
+                float multiplier = 1
+                )
+            {
+                this.handler = handler;
+                this.multiplier = multiplier;
+            }
+        }
+        public class PhysicalDefenseModifier
+        {
+            public object handler;
+            public float modifier;
+            public PhysicalDefenseModifier(
+                object handler,
+                float modifier = 0
+                )
+            {
+                this.handler = handler;
+                this.modifier = modifier;
+            }
+        }
+        public class EtherDefenseModifier
+        {
+            public object handler;
+            public float modifier;
+            public EtherDefenseModifier(
+                object handler,
+                float modifier = 0
+                )
+            {
+                this.handler = handler;
+                this.modifier = modifier;
+            }
+        }
+        public class AgilityModifier
+        {
+            public object handler;
+            public float multiplier;
+            public float modifier;
+            public AgilityModifier(
+                object handler,
+                float multiplier = 1,
+                float modifier = 0
+                )
+            {
+                this.handler = handler;
+                this.multiplier = multiplier;
+                this.modifier = modifier;
+            }
+        }
+        public class CriticalRateModifier
+        {
+            public object handler;
+            public float modifier;
+            public CriticalRateModifier(
+                object handler,
+                float modifier = 0
+                )
+            {
+                this.handler = handler;
+                this.modifier = modifier;
+            }
+        }
+        public class HealthModifier
+        {
+            public object handler;
+            public float multiplier;
+            public HealthModifier(
+                object handler,
+                float multiplier = 1
+                )
+            {
+                this.handler = handler;
+                this.multiplier = multiplier;
+            }
+        }
+        public void SetStrengthModifier(object handler, float multiplier = 1)
+        {
+            StrengthModifier statModifier = strengthModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.multiplier = multiplier;
+            }
+            else strengthModifiers.Add(new StrengthModifier(handler, multiplier));
+            RefreshStatModifiers();
+        }
+        public void SetEtherModifier(object handler, float multiplier = 1)
+        {
+            EtherModifier statModifier = etherModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.multiplier = multiplier;
+            }
+            else etherModifiers.Add(new EtherModifier(handler, multiplier));
+            RefreshStatModifiers();
+        }
+        public void SetPhysicalDefenseModifier(object handler, float modifier = 0)
+        {
+            PhysicalDefenseModifier statModifier = physicalDefenseModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.modifier = modifier;
+            }
+            else physicalDefenseModifiers.Add(new PhysicalDefenseModifier(handler, modifier));
+            RefreshStatModifiers();
+        }
+        public void SetEtherDefenseModifier(object handler, float modifier = 0)
+        {
+            EtherDefenseModifier statModifier = etherDefenseModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.modifier = modifier;
+            }
+            else etherDefenseModifiers.Add(new EtherDefenseModifier(handler, modifier));
+            RefreshStatModifiers();
+        }
+        public void SetAgilityModifier(object handler, float multiplier = 1, float modifier = 0)
+        {
+            AgilityModifier statModifier = agilityModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.multiplier = multiplier;
+                statModifier.modifier = modifier;
+            }
+            else agilityModifiers.Add(new AgilityModifier(handler, multiplier, modifier));
+            RefreshStatModifiers();
+        }
+        public void SetCriticalRateModifier(object handler, float modifier = 0)
+        {
+            CriticalRateModifier statModifier = criticalRateModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.modifier = modifier;
+            }
+            else criticalRateModifiers.Add(new CriticalRateModifier(handler, modifier));
+            RefreshStatModifiers();
+        }
+        public void SetHealthModifier(object handler, float multiplier = 1)
+        {
+            HealthModifier statModifier = healthModifiers.FirstOrDefault(p => p.handler == handler);
+            if (statModifier != null)
+            {
+                statModifier.multiplier = multiplier;
+            }
+            else healthModifiers.Add(new HealthModifier(handler, multiplier));
+            RefreshStatModifiers();
+        }
+        public void RemoveStrengthModifier(object handler)
+        {
+            for (int index = 0; index < strengthModifiers.Count; ++index)
+            {
+                if (strengthModifiers[index].handler == handler)
+                    strengthModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemoveEtherModifier(object handler)
+        {
+            for (int index = 0; index < etherModifiers.Count; ++index)
+            {
+                if (etherModifiers[index].handler == handler)
+                    etherModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemovePhysicalDefenseModifier(object handler)
+        {
+            for (int index = 0; index < physicalDefenseModifiers.Count; ++index)
+            {
+                if (physicalDefenseModifiers[index].handler == handler)
+                    physicalDefenseModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemoveEtherDefenseModifier(object handler)
+        {
+            for (int index = 0; index < etherDefenseModifiers.Count; ++index)
+            {
+                if (etherDefenseModifiers[index].handler == handler)
+                    etherDefenseModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemoveAgilityModifier(object handler)
+        {
+            for (int index = 0; index < agilityModifiers.Count; ++index)
+            {
+                if (agilityModifiers[index].handler == handler)
+                    agilityModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemoveCriticalRateModifier(object handler)
+        {
+            for (int index = 0; index < criticalRateModifiers.Count; ++index)
+            {
+                if (criticalRateModifiers[index].handler == handler)
+                    criticalRateModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void RemoveHealthModifier(object handler)
+        {
+            for (int index = 0; index < healthModifiers.Count; ++index)
+            {
+                if (healthModifiers[index].handler == handler)
+                    healthModifiers.RemoveAt(index);
+            }
+            RefreshStatModifiers();
+        }
+        public void ClearStrengthModifiers()
+        {
+            strengthModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearEtherModifiers()
+        {
+            etherModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearPhysicalDefenseModifiers()
+        {
+            physicalDefenseModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearEtherDefenseModifiers()
+        {
+            etherDefenseModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearAgilityModifiers()
+        {
+            agilityModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearCriticalRateModifiers()
+        {
+            criticalRateModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void ClearHealthModifiers()
+        {
+            healthModifiers.Clear();
+            RefreshStatModifiers();
+        }
+        public void RefreshStatModifiers()
+        {
+            if (strengthModifiers.Count + etherModifiers.Count + physicalDefenseModifiers.Count + etherDefenseModifiers.Count + agilityModifiers.Count + criticalRateModifiers.Count + healthModifiers.Count == 0)
+            {
+                strengthMultiplier = 1f;
+                etherMultiplier = 1f;
+                agilityMultiplier = 1f;
+                physicalDefenseModifier = 0;
+                etherDefenseModifier = 0;
+                agilityModifier = 0f;
+                criticalRateModifier = 0f;
+                healthMultiplier = 1f;
+            }
+            else
+            {
+                float num1 = 1f;
+                float num2 = 1f;
+                float num3 = 0f;
+                float num4 = 0f;
+                float num5 = 1f;
+                float num6 = 0f;
+                float num7 = 0f;
+                float num8 = 1f;
+                foreach (StrengthModifier modifier in strengthModifiers)
+                {
+                    num1 *= modifier.multiplier;
+                }
+                foreach (EtherModifier modifier in etherModifiers)
+                {
+                    num2 *= modifier.multiplier;
+                }
+                foreach (PhysicalDefenseModifier modifier in physicalDefenseModifiers)
+                {
+                    num3 += modifier.modifier;
+                }
+                foreach (EtherDefenseModifier modifier in etherDefenseModifiers)
+                {
+                    num4 += modifier.modifier;
+                }
+                foreach (AgilityModifier modifier in agilityModifiers)
+                {
+                    num5 *= modifier.multiplier;
+                    num6 += modifier.modifier;
+                }
+                foreach (CriticalRateModifier modifier in criticalRateModifiers)
+                {
+                    num7 += modifier.modifier;
+                }
+                foreach (HealthModifier modifier in healthModifiers)
+                {
+                    num8 *= modifier.multiplier;
+                }
+                strengthMultiplier = num1;
+                etherMultiplier = num2;
+                physicalDefenseModifier = num3;
+                etherDefenseModifier = num4;
+                agilityMultiplier = num5;
+                agilityModifier = num6;
+                criticalRateModifier = num7;
+                healthMultiplier = num8;
+            }
+            creature.maxHealth = baseHealth * healthMultiplier;
+            strength = Mathf.RoundToInt((float)(baseStrength * strengthMultiplier));
+            ether = Mathf.RoundToInt((float)(baseEther * etherMultiplier));
+            agility = Mathf.RoundToInt((float)((baseAgility + agilityModifier) * agilityMultiplier));
+            physicalDefense = basePhysicalDefense + physicalDefenseModifier;
+            etherDefense = baseEtherDefense + etherDefenseModifier;
+            criticalRate = baseCriticalRate + criticalRateModifier;
+        }
+        public void ClearStatModifiers()
+        {
+            strengthModifiers.Clear();
+            etherModifiers.Clear();
+            physicalDefenseModifiers.Clear();
+            etherDefenseModifiers.Clear();
+            agilityModifiers.Clear();
+            criticalRateModifiers.Clear();
+            healthModifiers.Clear();
+            RefreshStatModifiers();
         }
         public class LevelModifier
         {
@@ -182,98 +519,6 @@ namespace XenobladeRPG
         {
             levelModifiers.Clear();
             RefreshLevelModifiers();
-        }
-        public void SetStatModifier(
-            object handler,
-            float healthMultiplier = 1,
-            float strengthMultiplier = 1,
-            float etherMultiplier = 1,
-            float agilityMultiplier = 1,
-            float physicalDefenseModifier = 0,
-            float etherDefenseModifier = 0,
-            float agilityModifier = 0,
-            float criticalRateModifier = 0)
-        {
-            StatModifier statModifier = statModifiers.FirstOrDefault(p => p.handler == handler);
-            if (statModifier != null)
-            {
-                statModifier.healthMultiplier = healthMultiplier;
-                statModifier.strengthMultiplier = strengthMultiplier;
-                statModifier.etherMultiplier = etherMultiplier;
-                statModifier.agilityMultiplier = agilityMultiplier;
-                statModifier.physicalDefenseModifier = physicalDefenseModifier;
-                statModifier.etherDefenseModifier = etherDefenseModifier;
-                statModifier.agilityModifier = agilityModifier;
-                statModifier.criticalRateModifier = criticalRateModifier;
-            }
-            else
-                statModifiers.Add(new StatModifier(handler, healthMultiplier, strengthMultiplier, etherMultiplier, agilityMultiplier, physicalDefenseModifier, etherDefenseModifier, agilityModifier, criticalRateModifier));
-            RefreshStatModifiers();
-        }
-        public void RefreshStatModifiers()
-        {
-            if (statModifiers.Count == 0)
-            {
-                healthMultiplier = 1f;
-                strengthMultiplier = 1f;
-                etherMultiplier = 1f;
-                agilityMultiplier = 1f;
-                physicalDefenseModifier = 0f;
-                etherDefenseModifier = 0f;
-                agilityModifier = 0f;
-                criticalRateModifier = 0f;
-            }
-            else
-            {
-                float num1 = 1f;
-                float num2 = 1f;
-                float num3 = 1f;
-                float num4 = 0f;
-                float num5 = 0f;
-                float num6 = 0f;
-                float num7 = 1f;
-                float num8 = 0f;
-                foreach (StatModifier statModifier in statModifiers)
-                {
-                    num1 *= statModifier.healthMultiplier;
-                    num2 *= statModifier.strengthMultiplier;
-                    num3 *= statModifier.etherMultiplier;
-                    num4 += statModifier.physicalDefenseModifier;
-                    num5 += statModifier.etherDefenseModifier;
-                    num6 += statModifier.criticalRateModifier;
-                    num7 *= statModifier.agilityMultiplier;
-                    num8 += statModifier.agilityModifier;
-                }
-                healthMultiplier = num1;
-                strengthMultiplier = num2;
-                etherMultiplier = num3;
-                physicalDefenseModifier = num4;
-                etherDefenseModifier = num5;
-                criticalRateModifier = num6;
-                agilityMultiplier = num7;
-                agilityModifier = num8;
-            }
-            creature.maxHealth = baseHealth * healthMultiplier;
-            strength = Mathf.RoundToInt((float)(baseStrength * strengthMultiplier));
-            ether = Mathf.RoundToInt((float)(baseEther * etherMultiplier));
-            agility = Mathf.RoundToInt((float)((baseAgility + agilityModifier) * agilityMultiplier));
-            physicalDefense = basePhysicalDefense + physicalDefenseModifier;
-            etherDefense = baseEtherDefense + etherDefenseModifier;
-            criticalRate = baseCriticalRate + criticalRateModifier;
-        }
-        public void RemoveStatModifier(object handler)
-        {
-            for (int index = 0; index < statModifiers.Count; ++index)
-            {
-                if (statModifiers[index].handler == handler)
-                    statModifiers.RemoveAt(index);
-            }
-            RefreshStatModifiers();
-        }
-        public void ClearStatModifiers()
-        {
-            statModifiers.Clear();
-            RefreshStatModifiers();
         }
         public IEnumerator Apply()
         {
@@ -334,7 +579,7 @@ namespace XenobladeRPG
             baseAttackSpeedMultiplier = creature.brain.instance.GetModule<BrainModuleMelee>(false).animationSpeedMultiplier;
         }
 
-        public void Setup(int min, int max, int minVar, int maxVar, bool relative, bool unique, string name, bool sight, bool sound, bool force, float crit, DefenseDirection direction, float physDef, float ethDef, int health, int str, int eth, int agi)
+        public void Setup(int min, int max, int minVar, int maxVar, bool relative, bool unique, string name, bool sight, bool sound, bool force, float crit, DefenseDirection direction, float physDef, float ethDef, int health, int str, int eth, int agi, int xp, int ap)
         {
             minLevel = min;
             maxLevel = max;
@@ -358,6 +603,8 @@ namespace XenobladeRPG
             overrideStrength = str;
             overrideEther = eth;
             overrideAgility = agi;
+            overrideXP = xp;
+            overrideAP = ap;
         }
         public void RefreshLevel()
         {
