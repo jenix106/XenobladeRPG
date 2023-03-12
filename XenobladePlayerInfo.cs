@@ -5,6 +5,9 @@ using TMPro;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Wrist display for Player stats.
+    /// </summary>
     public class XenobladePlayerInfo : MonoBehaviour
     {
         WristStats stats;

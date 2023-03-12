@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Health bar display for creature stats.
+    /// </summary>
     public class XenobladeCreatureInfo : MonoBehaviour
     {
         Creature creature;

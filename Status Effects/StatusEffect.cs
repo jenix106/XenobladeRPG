@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Deals damage of a particular type every 2 seconds.
+    /// </summary>
     public class StatusEffect : MonoBehaviour
     {
         public Creature creature;

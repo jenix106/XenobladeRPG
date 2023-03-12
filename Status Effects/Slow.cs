@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Slows a creature's attack speed. Default duration is 10 seconds.
+    /// </summary>
     public class Slow : MonoBehaviour
     {
         public Creature creature;

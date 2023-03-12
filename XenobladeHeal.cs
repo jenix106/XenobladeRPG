@@ -4,6 +4,9 @@ using TMPro;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Controls the heal indicator text when you heal a creature.
+    /// </summary>
     public class XenobladeHeal : MonoBehaviour
     {
         public Creature creature;

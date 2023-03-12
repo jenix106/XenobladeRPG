@@ -7,6 +7,9 @@ using System.IO;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Controls the Player's stats and parameters, as well as tracking important values.
+    /// </summary>
     public class XenobladeManager
     {
         protected static int PlayerLevel = 1;

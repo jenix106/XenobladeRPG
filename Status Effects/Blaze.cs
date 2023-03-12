@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Deals Blaze damage every 2 seconds for 40% of the initial damage. Default duration is 20 seconds.
+    /// </summary>
     public class Blaze : MonoBehaviour
     {
         public Creature creature;

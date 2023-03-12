@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Retaliates against creatures by dealing damage or applying status effects.
+    /// </summary>
     public class Spike : MonoBehaviour
     {
         public Creature creature;

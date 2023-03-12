@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Deals Poison damage every 2 seconds for 100% of the initial damage. Default duration is 30 seconds.
+    /// </summary>
     public class Poison : MonoBehaviour
     {
         public Creature creature;

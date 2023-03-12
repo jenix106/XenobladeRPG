@@ -8,6 +8,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Deals Chill damage every 2 seconds for 60% of the initial damage. Default duration is 10 seconds.
+    /// </summary>
     public class Chill : MonoBehaviour
     {
         public Creature creature;

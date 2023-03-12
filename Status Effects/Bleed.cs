@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Deals Bleed damage every 2 seconds for 20% of the initial damage. Default duration is 20 seconds.
+    /// </summary>
     public class Bleed : MonoBehaviour
     {
         public Creature creature;

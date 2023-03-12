@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Controls a creature's stats and parameters.
+    /// </summary>
     public class XenobladeStats : MonoBehaviour
     {
         Creature creature;

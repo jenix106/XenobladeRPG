@@ -4,6 +4,9 @@ using TMPro;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Controls the damage indicator text when you damage a creature with any damage type other than Physical/Ether.
+    /// </summary>
     public class XenobladeMiscDamage : MonoBehaviour
     {
         public CollisionInstance instance;

@@ -3,11 +3,14 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Prevents walking/movement.
+    /// </summary>
     public class Bind : MonoBehaviour
     {
         public Creature creature;
         public float duration = 10;
-        public bool allowMove;
+        bool allowMove;
         public void Start()
         {
             creature = GetComponent<Creature>();

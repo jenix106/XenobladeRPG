@@ -3,6 +3,9 @@ using ThunderRoad;
 
 namespace XenobladeRPG
 {
+    /// <summary>
+    /// Puts a creature to sleep. Physical/ether attacks always crit against sleeping creatures.
+    /// </summary>
     public class Sleep : MonoBehaviour
     {
         public Creature creature;
