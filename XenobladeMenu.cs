@@ -64,9 +64,9 @@ namespace XenobladeRPG
         public ContainerData.Content bootsContent;
         public ContainerData.Content leftHandContent;
         public ContainerData.Content rightHandContent;
-        public Menu menu;
+        public UIMenu menu;
         public Button pressedButton;
-        public override void Init(MenuData menuData, Menu menu)
+        public override void Init(MenuData menuData, UIMenu menu)
         {
             base.Init(menuData, menu);
             this.menu = menu;

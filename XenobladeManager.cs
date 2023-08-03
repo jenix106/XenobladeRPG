@@ -10,7 +10,7 @@ namespace XenobladeRPG
     /// <summary>
     /// Controls the Player's stats and parameters, as well as tracking important values.
     /// </summary>
-    public class XenobladeManager
+    public class XenobladeManager : ThunderScript
     {
         protected static int PlayerLevel = 1;
         protected static int PlayerXP = 0;
@@ -54,6 +54,38 @@ namespace XenobladeRPG
         public static Dictionary<CollisionInstance, XenobladeDamageType> bypassedCollisions = new Dictionary<CollisionInstance, XenobladeDamageType>();
         public static Dictionary<CollisionInstance, XenobladeDamageType> recordedCollisions = new Dictionary<CollisionInstance, XenobladeDamageType>();
         public static List<XenobladeDamage> xenobladeDamages = new List<XenobladeDamage>();
+        public static List<XenobladeIndicatorState> indicatorStates = new List<XenobladeIndicatorState>();
+        [ModOption(name: "Damage Indicators", tooltip: "Displays the amount of damage dealt", valueSourceName: nameof(booleanOption), defaultValueIndex = 0)]
+        public static bool damageIndicators;
+        [ModOption(name: "Heal Indicators", tooltip: "Displays the amount of health recovered", valueSourceName: nameof(booleanOption), defaultValueIndex = 0)]
+        public static bool healIndicators;
+        [ModOption(name: "Health Bars", tooltip: "Displays the enemy's stats", valueSourceName: nameof(booleanOption), defaultValueIndex = 0)]
+        public static bool healthBars;
+        [ModOption(name: "Attacks Can Miss", tooltip: "Allows attacks to miss or be resisted", valueSourceName: nameof(booleanOption), defaultValueIndex = 0)]
+        public static bool attacksCanMiss;
+        [ModOption(name: "Disable XP Gain", tooltip: "Disables XP from being gained", valueSourceName: nameof(booleanOption), defaultValueIndex = 1)]
+        public static bool disableXPGain;
+        public static bool resetPlayerStats = false;
+        [ModOption(name: "Reset Player Stats", tooltip: "Resets all player stats and sets level to 1 for the current save file", valueSourceName: nameof(toggleOption), defaultValueIndex = 0)]
+        public static void ResetPlayerStats(bool value)
+        {
+            resetPlayerStats = value;
+            if (value)
+            {
+                LoadFromSave();
+                GameManager.options.SetModOption("!Xenoblade RPG", "Reset Player Stats", 0);
+            }
+        }
+        public static ModOptionBool[] booleanOption =
+        {
+            new ModOptionBool("Enabled", true),
+            new ModOptionBool("Disabled", false)
+        };
+        public static ModOptionBool[] toggleOption =
+        {
+            new ModOptionBool("Click to reset", false),
+            new ModOptionBool("Stats reset", true)
+        };
         public static int GetLevel() => PlayerLevel;
         /// <summary>
         /// Retrieves current Experience Points. Used when levelling up.
@@ -185,13 +217,14 @@ namespace XenobladeRPG
         public static void Heal(Creature healed, Creature healer, float healMultiplier)
         {
             float amount = (healer.player != null ? GetEther() : healer.GetComponent<XenobladeStats>().GetEther()) * healMultiplier;
+            EventManager.InvokeCreatureHeal(healed, amount, healer, EventTime.OnStart);
             healed.currentHealth += Mathf.Max(amount, 0);
             healed.currentHealth = Mathf.Min(healed.currentHealth, healed.maxHealth);
-            EventManager.InvokeCreatureHeal(healed, amount, healer); 
             GameObject healObject = Object.Instantiate(XenobladeLevelModule.heal);
             XenobladeHeal xenobladeHeal = healObject.AddComponent<XenobladeHeal>();
             xenobladeHeal.creature = healed;
             xenobladeHeal.amount = amount;
+            EventManager.InvokeCreatureHeal(healed, amount, healer, EventTime.OnEnd);
         }
         /// <summary>
         /// <see cref="Creature.Damage(CollisionInstance)">Damages</see> the creature while following Xenoblade rules. Eases damage calculations by providing variables beforehand.
@@ -672,15 +705,18 @@ namespace XenobladeRPG
         /// <param name="xp"></param>
         public static void AddXP(int xp)
         {
-            PlayerXP += xp;
-            if (PlayerXP >= XPNeeded && PlayerLevel < 99)
+            if (!disableXPGain)
             {
-                while (PlayerXP >= XPNeeded && PlayerLevel < 99)
+                PlayerXP += xp;
+                if (PlayerXP >= XPNeeded && PlayerLevel < 99)
                 {
-                    LevelUp();
+                    while (PlayerXP >= XPNeeded && PlayerLevel < 99)
+                    {
+                        LevelUp();
+                    }
                 }
+                else SaveToJSON();
             }
-            else SaveToJSON();
         }
         /// <summary>
         /// Adds Art Points.
@@ -763,20 +799,41 @@ namespace XenobladeRPG
         /// </summary>
         public static void LoadFromSave()
         {
-            if (File.Exists(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save"))
+            GameManager.platform.TryGetSavePath(out string path);
+            if (File.Exists(path + Player.characterData.ID + ".xcrpg_save"))
             {
-                XenobladeValues xenobladeValues = JsonConvert.DeserializeObject<XenobladeValues>(File.ReadAllText(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save"));
-                PlayerLevel = Mathf.Clamp(xenobladeValues.PlayerLevel, 1, 99);
-                PlayerXP = Mathf.Max(xenobladeValues.PlayerXP, 0);
-                PlayerAP = Mathf.Clamp(xenobladeValues.PlayerAP, 0, 999999);
-                PlayerSP = Mathf.Max(xenobladeValues.PlayerSP, 0);
-                BaseStrength = Mathf.Max(xenobladeValues.Strength, 0);
-                BaseEther = Mathf.Max(xenobladeValues.Ether, 0);
-                BaseAgility = Mathf.Max(xenobladeValues.Agility, 0);
-                StrengthHits = Mathf.Max(xenobladeValues.StrengthHits, 1);
-                EtherHits = Mathf.Max(xenobladeValues.EtherHits, 1);
-                BaseCriticalRate = Mathf.Clamp(xenobladeValues.CriticalRate, 0, 1);
-                BaseBlockRate = Mathf.Clamp(xenobladeValues.BlockRate, 0, 1);
+                if (!resetPlayerStats)
+                {
+                    XenobladeValues xenobladeValues = JsonConvert.DeserializeObject<XenobladeValues>(File.ReadAllText(path + Player.characterData.ID + ".xcrpg_save"), Catalog.jsonSerializerSettings);
+                    PlayerLevel = Mathf.Clamp(xenobladeValues.PlayerLevel, 1, 99);
+                    PlayerXP = Mathf.Max(xenobladeValues.PlayerXP, 0);
+                    PlayerAP = Mathf.Clamp(xenobladeValues.PlayerAP, 0, 999999);
+                    PlayerSP = Mathf.Max(xenobladeValues.PlayerSP, 0);
+                    BaseStrength = Mathf.Max(xenobladeValues.Strength, 0);
+                    BaseEther = Mathf.Max(xenobladeValues.Ether, 0);
+                    BaseAgility = Mathf.Max(xenobladeValues.Agility, 0);
+                    StrengthHits = Mathf.Max(xenobladeValues.StrengthHits, 1);
+                    EtherHits = Mathf.Max(xenobladeValues.EtherHits, 1);
+                    BaseCriticalRate = Mathf.Clamp(xenobladeValues.CriticalRate, 0, 1);
+                    BaseBlockRate = Mathf.Clamp(xenobladeValues.BlockRate, 0, 1);
+                }
+                else
+                {
+                    Debug.Log("Reset Player Stats");
+                    PlayerLevel = 1;
+                    PlayerXP = 0;
+                    PlayerAP = 0;
+                    PlayerSP = 0;
+                    BaseStrength = 0;
+                    BaseEther = 0;
+                    BaseAgility = 0;
+                    StrengthHits = 1;
+                    EtherHits = 1;
+                    BaseCriticalRate = 0;
+                    BaseBlockRate = 0;
+                    resetPlayerStats = false;
+                    SaveToJSON();
+                }
                 Debug.Log("Loaded Xenoblade RPG save: " + Player.characterData.ID);
             }
             else
@@ -809,6 +866,7 @@ namespace XenobladeRPG
         /// </summary>
         public static void SaveToJSON()
         {
+            GameManager.platform.TryGetSavePath(out string path);
             XenobladeValues xenobladeValues = new XenobladeValues()
             {
                 PlayerLevel = PlayerLevel,
@@ -823,8 +881,8 @@ namespace XenobladeRPG
                 CriticalRate = BaseCriticalRate,
                 BlockRate = BaseBlockRate
             };
-            string contents = JsonConvert.SerializeObject(xenobladeValues, Formatting.Indented);
-            File.WriteAllText(DataManager.GetLocalSavePath() + Player.characterData.ID + ".xcrpg_save", contents);
+            string contents = JsonConvert.SerializeObject(xenobladeValues, Formatting.Indented, Catalog.jsonSerializerSettings);
+            File.WriteAllText(path + Player.characterData.ID + ".xcrpg_save", contents);
         }
     }
 }

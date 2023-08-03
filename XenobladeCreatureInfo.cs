@@ -120,6 +120,7 @@ namespace XenobladeRPG
             if (stats.creatureName == "")
                 creatureName.text = creature.data.name;
             else creatureName.text = stats.creatureName;
+            healthBar.SetActive(XenobladeManager.healthBars);
             StartCoroutine(UpdateHealth());
         }
         public void AddStatusEffects()
@@ -208,7 +209,7 @@ namespace XenobladeRPG
         }
         private void Ragdoll_OnSliceEvent(RagdollPart ragdollPart, EventTime eventTime)
         {
-            if (ragdollPart.data.sliceForceKill && eventTime == EventTime.OnStart && !creature.isKilled)
+            if (ragdollPart.data.sliceForceKill && eventTime == EventTime.OnStart && !creature.isKilled && XenobladeManager.damageIndicators)
             {
                 GameObject dmg = Instantiate(XenobladeLevelModule.damage);
                 XenobladeDamage dmgComponent = dmg.AddComponent<XenobladeDamage>();
@@ -241,6 +242,7 @@ namespace XenobladeRPG
         {
             if (!creature.isKilled && healthBar != null)
             {
+                healthBar.SetActive(XenobladeManager.healthBars);
                 healthBar.transform.position = creature.ragdoll.headPart.transform.position + Vector3.up * 0.5f;
                 if (Spectator.local?.cam != null && Spectator.local.state != Spectator.State.Disabled)
                     healthBar.transform.rotation = Quaternion.LookRotation(-(Spectator.local.cam.transform.position - healthBar.transform.position).normalized);

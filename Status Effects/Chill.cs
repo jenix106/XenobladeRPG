@@ -42,9 +42,9 @@ namespace XenobladeRPG
             cooldown = Time.time;
         }
 
-        private void Creature_OnDamageEvent(CollisionInstance collisionInstance)
+        private void Creature_OnDamageEvent(CollisionInstance collisionInstance, EventTime eventTime)
         {
-            if (collisionInstance == initialDamage)
+            if (collisionInstance == initialDamage && eventTime == EventTime.OnEnd)
             {
                 chillDamage = new CollisionInstance(new DamageStruct(DamageType.Energy, Mathf.Max(collisionInstance.damageStruct.damage * 0.6f, 1)));
                 chillDamage.damageStruct.hitRagdollPart = creature.ragdoll.rootPart;

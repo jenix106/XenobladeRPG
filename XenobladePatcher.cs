@@ -38,10 +38,13 @@ namespace XenobladeRPG
         }
         static void Postfix(Creature __instance, float heal)
         {
-            GameObject healObject = Object.Instantiate(XenobladeLevelModule.heal);
-            XenobladeHeal xenobladeHeal = healObject.AddComponent<XenobladeHeal>();
-            xenobladeHeal.creature = __instance;
-            xenobladeHeal.amount = heal;
+            if (XenobladeManager.healIndicators)
+            {
+                GameObject healObject = Object.Instantiate(XenobladeLevelModule.heal);
+                XenobladeHeal xenobladeHeal = healObject.AddComponent<XenobladeHeal>();
+                xenobladeHeal.creature = __instance;
+                xenobladeHeal.amount = heal;
+            }
         }
     }
     [HarmonyPatch(typeof(Creature), nameof(Creature.Damage))]
@@ -183,7 +186,7 @@ namespace XenobladeRPG
                         if (xenobladeDamage?.damageType == XenobladeDamageType.Ether || collisionInstance?.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance.damageStruct.damager == null)
                         {
                             damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetEther() : (attackerStats ? attackerStats.GetEther() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
-                            if (Random.Range(1, 101) <= 100 - (etherHitRate * 100)) isResisted = true;
+                            if (Random.Range(1, 101) <= 100 - (etherHitRate * 100) && XenobladeManager.attacksCanMiss) isResisted = true;
                             if (__instance.state == Creature.State.Destabilized) isResisted = false;
                             if ((Random.Range(1, 101) <= criticalRate * 100 || __instance.state == Creature.State.Destabilized) && !isResisted) isCritical = true;
                             if (defenderStats?.GetEtherDefense() <= 0) isDefended = false;
@@ -199,8 +202,8 @@ namespace XenobladeRPG
                         else if (xenobladeDamage?.damageType == XenobladeDamageType.Physical || xenobladeDamage == null)
                         {
                             damageTotal += collisionInstance.damageStruct.damage + (attacker.isPlayer ? XenobladeManager.GetStrength() : (attackerStats ? attackerStats.GetStrength() : 0)) + ((weaponStats != null && attacker.isPlayer) ? Random.Range(weaponStats.attackDamageRange.x, weaponStats.attackDamageRange.y + 1) : 0);
-                            if (Random.Range(1, 101) <= 100 - (physicalHitRate * 100)) isMissed = true;
-                            if (Random.Range(1, 101) <= (evadeRate * 100)) isMissed = true;
+                            if (Random.Range(1, 101) <= 100 - (physicalHitRate * 100) && XenobladeManager.attacksCanMiss) isMissed = true;
+                            if (Random.Range(1, 101) <= (evadeRate * 100) && XenobladeManager.attacksCanMiss) isMissed = true;
                             if (__instance.state == Creature.State.Destabilized || collisionInstance.damageStruct.penetration == DamageStruct.Penetration.Skewer || collisionInstance.damageStruct.damage == float.PositiveInfinity) isMissed = false;
                             if (Random.Range(1, 101) <= (blockRate + blockRateModifier) * 100) isBlocked = true;
                             if (Random.Range(1, 101) <= (criticalRate * 100) && !isBlocked) isCritical = true;
@@ -294,7 +297,7 @@ namespace XenobladeRPG
                 XenobladeEvents.InvokeOnBypassedDamage(ref collisionInstance, ref __instance, XenobladeManager.bypassedCollisions[collisionInstance], ref __state);
             if (isMissed)
             {
-                if (!__instance.isKilled && collisionInstance?.damageStruct != null)
+                if (!__instance.isKilled && collisionInstance?.damageStruct != null && XenobladeManager.damageIndicators)
                 {
                     GameObject dmg = Object.Instantiate(XenobladeLevelModule.damage);
                     XenobladeDamage xenobladeDamage1 = dmg.AddComponent<XenobladeDamage>();
@@ -317,7 +320,7 @@ namespace XenobladeRPG
         }
         static void Postfix(Creature __instance, ref CollisionInstance collisionInstance, XenobladeIndicatorState __state)
         {
-            if (__state.IsAlive && collisionInstance?.damageStruct != null && collisionInstance.damageStruct.active && collisionInstance.damageStruct.damage < float.PositiveInfinity && collisionInstance.damageStruct.damage >= 0)
+            if (__state.IsAlive && collisionInstance?.damageStruct != null && collisionInstance.damageStruct.active && collisionInstance.damageStruct.damage < float.PositiveInfinity && collisionInstance.damageStruct.damage >= 0 && XenobladeManager.damageIndicators)
             {
                 if (__state.DamageType == XenobladeDamageType.Physical || __state.DamageType == XenobladeDamageType.Ether)
                 {

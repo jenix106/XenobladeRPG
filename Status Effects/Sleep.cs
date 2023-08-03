@@ -19,9 +19,9 @@ namespace XenobladeRPG
             XenobladeEvents.InvokeOnDebuffAdded(this, creature, this);
         }
 
-        private void Creature_OnDamageEvent(CollisionInstance collisionInstance)
+        private void Creature_OnDamageEvent(CollisionInstance collisionInstance, EventTime eventTime)
         {
-            if(collisionInstance.damageStruct.damage > 0)
+            if(collisionInstance.damageStruct.damage > 0 && eventTime == EventTime.OnEnd)
             {
                 Destroy(this);
             }
