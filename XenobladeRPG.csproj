@@ -38,6 +38,9 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="QuestFramework">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\HJ_QuestFramework\QuestFramework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -73,6 +76,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="QuestFrameworkPatcher.cs" />
     <Compile Include="Status Effects\Bind.cs" />
     <Compile Include="Status Effects\Blaze.cs" />
     <Compile Include="Status Effects\Bleed.cs" />

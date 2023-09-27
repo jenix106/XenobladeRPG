@@ -9,7 +9,14 @@ namespace XenobladeRPG
         public static void DoPatching()
         {
             Harmony harmony = new Harmony("XenobladeRPG");
-            harmony.PatchAll();
+            var healOriginal = typeof(Creature).GetMethod(nameof(Creature.Heal), new System.Type[] { typeof(float), typeof(Creature) });
+            var healPrefix = typeof(XenobladeHealPatch).GetMethod(nameof(XenobladeHealPatch.Prefix));
+            var healPostfix = typeof(XenobladeHealPatch).GetMethod(nameof(XenobladeHealPatch.Postfix));
+            var damageOriginal = typeof(Creature).GetMethod(nameof(Creature.Damage), new System.Type[] { typeof(CollisionInstance) });
+            var damagePrefix = typeof(XenobladeDamagePatch).GetMethod(nameof(XenobladeDamagePatch.Prefix));
+            var damagePostfix = typeof(XenobladeDamagePatch).GetMethod(nameof(XenobladeDamagePatch.Postfix));
+            harmony.Patch(healOriginal, new HarmonyMethod(healPrefix), new HarmonyMethod(healPostfix));
+            harmony.Patch(damageOriginal, new HarmonyMethod(damagePrefix), new HarmonyMethod(damagePostfix));
         }
     }
     public class XenobladeIndicatorState
@@ -22,10 +29,10 @@ namespace XenobladeRPG
         public bool IsAlive { get; set; }
         public XenobladeDamageType DamageType { get; set; }
     }
-    [HarmonyPatch(typeof(Creature), nameof(Creature.Heal))]
+    [HarmonyPatch(typeof(Creature), nameof(Creature.Heal), new System.Type[] { typeof(float), typeof(Creature)})]
     public class XenobladeHealPatch
     {
-        static void Prefix(Creature __instance, ref float heal)
+        public static void Prefix(Creature __instance, ref float heal)
         {
             if(__instance.player != null)
             {
@@ -36,7 +43,7 @@ namespace XenobladeRPG
                 heal *= stats.GetLevel();
             }
         }
-        static void Postfix(Creature __instance, float heal)
+        public static void Postfix(Creature __instance, float heal)
         {
             if (XenobladeManager.healIndicators)
             {
@@ -47,7 +54,7 @@ namespace XenobladeRPG
             }
         }
     }
-    [HarmonyPatch(typeof(Creature), nameof(Creature.Damage))]
+    [HarmonyPatch(typeof(Creature), nameof(Creature.Damage), new System.Type[] { typeof(CollisionInstance) })]
     public class XenobladeDamagePatch
     {
         static void DetermineHitRateModifiers(float attackerLevel, float defenderLevel, float attackerAgility, float defenderAgility, out float blockRateModifier, out float physicalHitRate, out float etherHitRate, out float evadeRate)
@@ -98,7 +105,7 @@ namespace XenobladeRPG
                 else defenseDirection = DefenseDirection.Back;
             }
         }
-        static void Prefix(Creature __instance, ref CollisionInstance collisionInstance, out XenobladeIndicatorState __state)
+        public static void Prefix(Creature __instance, ref CollisionInstance collisionInstance, out XenobladeIndicatorState __state)
         {
             bool isCritical = false;
             bool isSneakAttack = false;
@@ -158,8 +165,8 @@ namespace XenobladeRPG
                 {
                     try
                     {
-                        XenobladeStats attackerStats = attacker.GetComponent<XenobladeStats>();
-                        XenobladeStats defenderStats = __instance.GetComponent<XenobladeStats>();
+                        XenobladeStats attackerStats = attacker?.GetComponent<XenobladeStats>();
+                        XenobladeStats defenderStats = __instance?.GetComponent<XenobladeStats>();
                         XenobladeWeaponModule weaponStats = weapon?.data?.GetModule<XenobladeWeaponModule>();
                         int attackerLevel = attackerStats != null ? attackerStats.GetLevel() : XenobladeManager.GetLevel();
                         int defenderLevel = defenderStats != null ? defenderStats.GetLevel() : XenobladeManager.GetLevel();
@@ -217,13 +224,13 @@ namespace XenobladeRPG
                             damageTotal *= physicalDamageMult;
                             type = XenobladeDamageType.Physical;
                         }
-                        if (defenderStats.isToppled && (collisionInstance.targetColliderGroup?.collisionHandler?.ragdollPart?.type == RagdollPart.Type.Head || __instance.brain.isElectrocuted)) defenderStats.isDazed = true;
+                        if (defenderStats != null && defenderStats.isToppled && (collisionInstance.targetColliderGroup?.collisionHandler?.ragdollPart?.type == RagdollPart.Type.Head || __instance.brain.isElectrocuted)) defenderStats.isDazed = true;
                     }
-                    catch
+                    catch (System.Exception e)
                     {
                         if (collisionInstance?.damageStruct != null)
                         {
-                            Debug.LogWarning("Xenoblade Damage ran into an issue, defaulting to fallback");
+                            Debug.LogWarning("Xenoblade Damage ran into an issue, defaulting to fallback. Exception: " + e);
                             if (xenobladeDamage?.damageType == XenobladeDamageType.Ether || collisionInstance?.damageStruct.damageType == DamageType.Energy || collisionInstance?.damageStruct.damageType == DamageType.Unknown || collisionInstance?.damageStruct.damager == null)
                             {
                                 damageTotal += collisionInstance.damageStruct.damage + XenobladeManager.GetEther();
@@ -318,7 +325,7 @@ namespace XenobladeRPG
                     XenobladeManager.recordedCollisions.Add(collisionInstance, type);
             }
         }
-        static void Postfix(Creature __instance, ref CollisionInstance collisionInstance, XenobladeIndicatorState __state)
+        public static void Postfix(Creature __instance, ref CollisionInstance collisionInstance, XenobladeIndicatorState __state)
         {
             if (__state.IsAlive && collisionInstance?.damageStruct != null && collisionInstance.damageStruct.active && collisionInstance.damageStruct.damage < float.PositiveInfinity && collisionInstance.damageStruct.damage >= 0 && XenobladeManager.damageIndicators)
             {

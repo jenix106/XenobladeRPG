@@ -74,54 +74,58 @@ namespace XenobladeRPG
         StatusEffect[] statuses;
         int debuffCounter = 0;
         int buffCounter = 0;
+        public bool hideHealthbar = false;
         public void Start()
         {
             creature = GetComponent<Creature>();
             creature.OnDespawnEvent += Creature_OnDespawnEvent;
             creature.OnKillEvent += Creature_OnKillEvent;
             creature.ragdoll.OnSliceEvent += Ragdoll_OnSliceEvent;
-            health = healthBar.transform.Find("Health").GetComponent<Image>();
-            creatureName = healthBar.transform.Find("Name").GetComponent<Text>();
-            level = healthBar.transform.Find("Level").GetComponent<Text>();
-            sight = (RectTransform)healthBar.transform.Find("Sight").transform;
-            hearing = (RectTransform)healthBar.transform.Find("Hearing").transform;
-            passive = (RectTransform)healthBar.transform.Find("Passive").transform;
-            unique = (RectTransform)healthBar.transform.Find("Unique").transform;
-            color = healthBar.transform.Find("Color").GetComponent<Image>();
-            AddBuffs();
-            AddDebuffs();
-            AddStatusEffects();
-            points = healthBar.transform.Find("Points").GetComponent<Text>();
-            pointsBlack = healthBar.transform.Find("PointsBlack").GetComponent<Text>();
             stats = creature.GetComponent<XenobladeStats>();
-            if (creature.brain.instance.GetModule<BrainModuleDetection>(false) != null)
+            if (stats != null)
             {
-                detection = creature.brain.instance.GetModule<BrainModuleDetection>(false);
-                if (detection.sightDetectionHorizontalFov > 0 && detection.sightDetectionVerticalFov > 0 && stats.detectionTypeSight) sight.gameObject.SetActive(true);
-                else if (detection.canHear && stats.detectionTypeSound) hearing.gameObject.SetActive(true);
+                health = healthBar.transform.Find("Health").GetComponent<Image>();
+                creatureName = healthBar.transform.Find("Name").GetComponent<Text>();
+                level = healthBar.transform.Find("Level").GetComponent<Text>();
+                sight = (RectTransform)healthBar.transform.Find("Sight").transform;
+                hearing = (RectTransform)healthBar.transform.Find("Hearing").transform;
+                passive = (RectTransform)healthBar.transform.Find("Passive").transform;
+                unique = (RectTransform)healthBar.transform.Find("Unique").transform;
+                color = healthBar.transform.Find("Color").GetComponent<Image>();
+                AddBuffs();
+                AddDebuffs();
+                AddStatusEffects();
+                points = healthBar.transform.Find("Points").GetComponent<Text>();
+                pointsBlack = healthBar.transform.Find("PointsBlack").GetComponent<Text>();
+                if (creature.brain.instance?.GetModule<BrainModuleDetection>(false) != null)
+                {
+                    detection = creature.brain.instance.GetModule<BrainModuleDetection>(false);
+                    if (detection.sightDetectionHorizontalFov > 0 && detection.sightDetectionVerticalFov > 0 && stats.detectionTypeSight) sight.gameObject.SetActive(true);
+                    else if (detection.canHear && stats.detectionTypeSound) hearing.gameObject.SetActive(true);
+                    else passive.gameObject.SetActive(true);
+                }
+                if (creature.brain.instance?.GetModule<BrainModuleMelee>(false) != null) melee = creature.brain.instance.GetModule<BrainModuleMelee>(false);
                 else passive.gameObject.SetActive(true);
+                if (!stats.detectionTypeSight || (stats.detectionTypeSound && !stats.detectionTypeSight))
+                {
+                    detection.sightDetectionHorizontalFov = 0;
+                    detection.sightDetectionVerticalFov = 0;
+                }
+                unique.gameObject.SetActive(stats.isUnique);
+                if (stats.GetLevel() < 10) level.text = "00" + stats.GetLevel().ToString();
+                else if (stats.GetLevel() < 100) level.text = "0" + stats.GetLevel().ToString();
+                else level.text = stats.GetLevel().ToString();
+                if (stats.GetLevel() <= XenobladeManager.GetLevel() - 6) color.color = Color.black;
+                else if (stats.GetLevel() <= XenobladeManager.GetLevel() - 3) color.color = Color.blue;
+                else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 6) color.color = Color.red;
+                else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 3) color.color = Color.yellow;
+                else color.color = Color.white;
+                if (stats.creatureName == "")
+                    creatureName.text = creature.data.name;
+                else creatureName.text = stats.creatureName;
+                healthBar.SetActive(XenobladeManager.healthBars);
+                StartCoroutine(UpdateHealth());
             }
-            if (creature.brain.instance.GetModule<BrainModuleMelee>(false) != null) melee = creature.brain.instance.GetModule<BrainModuleMelee>(false);
-            else passive.gameObject.SetActive(true);
-            if (!stats.detectionTypeSight || (stats.detectionTypeSound && !stats.detectionTypeSight))
-            {
-                detection.sightDetectionHorizontalFov = 0;
-                detection.sightDetectionVerticalFov = 0;
-            }
-            unique.gameObject.SetActive(stats.isUnique);
-            if (stats.GetLevel() < 10) level.text = "00" + stats.GetLevel().ToString();
-            else if (stats.GetLevel() < 100) level.text = "0" + stats.GetLevel().ToString();
-            else level.text = stats.GetLevel().ToString();
-            if (stats.GetLevel() <= XenobladeManager.GetLevel() - 6) color.color = Color.black;
-            else if (stats.GetLevel() <= XenobladeManager.GetLevel() - 3) color.color = Color.blue;
-            else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 6) color.color = Color.red;
-            else if (stats.GetLevel() >= XenobladeManager.GetLevel() + 3) color.color = Color.yellow;
-            else color.color = Color.white;
-            if (stats.creatureName == "")
-                creatureName.text = creature.data.name;
-            else creatureName.text = stats.creatureName;
-            healthBar.SetActive(XenobladeManager.healthBars);
-            StartCoroutine(UpdateHealth());
         }
         public void AddStatusEffects()
         {
@@ -240,9 +244,10 @@ namespace XenobladeRPG
 
         public void Update()
         {
-            if (!creature.isKilled && healthBar != null)
+            if (!creature.isKilled && healthBar != null && stats != null)
             {
-                healthBar.SetActive(XenobladeManager.healthBars);
+                hideHealthbar = DisplayMessage.instance?.currentMessageData?.anchorTargetTransform?.GetComponentInParent<XenobladeCreatureInfo>() == this;
+                healthBar.SetActive(XenobladeManager.healthBars && !hideHealthbar);
                 healthBar.transform.position = creature.ragdoll.headPart.transform.position + Vector3.up * 0.5f;
                 if (Spectator.local?.cam != null && Spectator.local.state != Spectator.State.Disabled)
                     healthBar.transform.rotation = Quaternion.LookRotation(-(Spectator.local.cam.transform.position - healthBar.transform.position).normalized);

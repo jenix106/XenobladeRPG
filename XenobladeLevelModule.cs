@@ -22,6 +22,7 @@ namespace XenobladeRPG
             EventManager.onLevelLoad += EventManager_onLevelLoad;
             WaveSpawner.OnWaveSpawnerStartRunningEvent.AddListener(call => UpdateHealth());
             XenobladePatcher.DoPatching();
+            QuestFrameworkPatcher.DoPatching();
         }
         public override void ScriptDisable()
         {
@@ -212,6 +213,7 @@ namespace XenobladeRPG
         {
             if (creature != Player.local.creature)
             {
+                creature.brain?.instance?.GetModule<XenobladeBrainModule>(true);
                 creature.gameObject.AddComponent<XenobladeCreatureInfo>().healthBar = Object.Instantiate(currentBar);
             }
             if (creature == Player.local.creature)
